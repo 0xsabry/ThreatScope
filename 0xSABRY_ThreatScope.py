@@ -3,12 +3,23 @@ import json
 import struct
 import threading
 import hashlib
+import argparse
+import sys
+import os
+import uuid
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import Counter, defaultdict
 from urllib.parse import urlparse
+
+# ================= SIGMA RULE SUPPORT (OPTIONAL) =================
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
 
 # ================= EVTX OPTIONAL SUPPORT =================
 try:
@@ -18,7 +29,7 @@ try:
 except ImportError:
     EVTX_LIB = False
 
-VERSION = "2.0.0"
+VERSION = "3.0.0"
 
 # ================= COLORS & THEME =================
 BG_DARK     = "#0d0d0d"
@@ -197,6 +208,43 @@ PATTERNS = {
     "mining_pool":               {"patterns": [r"mining.*pool|stratum\+tcp|pool\.(minergate|hashvault|nanopool)", r"monero.*pool|bitcoin.*pool|crypto.*mine.*connect"], "severity": "HIGH", "weight": 25, "category": "Cryptomining", "desc": "Cryptocurrency mining pool connection detected", "mitre": "T1496"},
     "stratum_protocol":          {"patterns": [r"stratum.*subscribe|mining\.submit|mining\.authorize", r"eth_submitWork|eth_getWork"], "severity": "HIGH", "weight": 30, "category": "Cryptomining", "desc": "Stratum mining protocol communication detected", "mitre": "T1496"},
     "xmrig_detect":              {"patterns": [r"xmrig|xmr-stak|cpuminer|minerd\b", r"randomx.*init|cryptonight.*hash"], "severity": "HIGH", "weight": 30, "category": "Cryptomining", "desc": "Cryptocurrency miner executable detected (XMRig/CPUMiner)", "mitre": "T1496"},
+
+    # === API Security (T1190) ===
+    "jwt_abuse":                 {"patterns": [r"JWT.*tamper|jwt.*none.*algorithm|alg.*none", r"eyJ[a-zA-Z0-9_-]*\.eyJ.*forged"], "severity": "HIGH", "weight": 25, "category": "API Security", "desc": "JWT token abuse or algorithm confusion attack", "mitre": "T1190"},
+    "api_key_exposure":          {"patterns": [r"api[_-]?key[=: ]+[a-zA-Z0-9]{20,}", r"Authorization.*Bearer.*leak|x-api-key.*expos"], "severity": "HIGH", "weight": 20, "category": "API Security", "desc": "API key exposure or leakage detected", "mitre": "T1552.001"},
+    "graphql_injection":         {"patterns": [r"__schema|__type|IntrospectionQuery", r"graphql.*inject|mutation.*unauthorized"], "severity": "HIGH", "weight": 25, "category": "API Security", "desc": "GraphQL introspection or injection attack", "mitre": "T1190"},
+    "rate_limit_bypass":         {"patterns": [r"rate.?limit.*bypass|X-Forwarded-For.*spoof.*rate", r"429.*bypass|throttle.*evade"], "severity": "MEDIUM", "weight": 15, "category": "API Security", "desc": "API rate limiting bypass attempt", "mitre": "T1190"},
+    "api_mass_assignment":       {"patterns": [r"mass.?assign|parameter.*pollut|prototype.*pollut", r"__proto__.*inject|constructor.*pollut"], "severity": "HIGH", "weight": 25, "category": "API Security", "desc": "API mass assignment or prototype pollution attack", "mitre": "T1190"},
+    "broken_auth_api":           {"patterns": [r"IDOR|insecure.*direct.*object|BOLA|broken.*object.*level", r"unauthorized.*api.*access"], "severity": "HIGH", "weight": 25, "category": "API Security", "desc": "Broken Object Level Authorization (BOLA/IDOR) attempt", "mitre": "T1190"},
+    "oauth_token_theft":         {"patterns": [r"oauth.*redirect.*steal|authorization_code.*intercept", r"token.*hijack.*oauth|oauth.*phish"], "severity": "CRITICAL", "weight": 35, "category": "API Security", "desc": "OAuth token theft or authorization code interception", "mitre": "T1528"},
+
+    # === AI/ML Security ===
+    "prompt_injection":          {"patterns": [r"prompt.*inject|ignore.*previous.*instruct|DAN.*mode", r"jailbreak.*prompt|system.*prompt.*leak"], "severity": "HIGH", "weight": 25, "category": "AI/ML Attack", "desc": "AI prompt injection or jailbreak attempt", "mitre": "T1190"},
+    "model_poisoning":           {"patterns": [r"model.*poison|training.*data.*tamper|adversarial.*train", r"backdoor.*model|trojan.*neural"], "severity": "CRITICAL", "weight": 40, "category": "AI/ML Attack", "desc": "ML model poisoning or backdoor injection", "mitre": "T1195.002"},
+    "adversarial_input":         {"patterns": [r"adversarial.*example|evasion.*attack.*model|perturbation.*input", r"model.*evasion|classifier.*bypass"], "severity": "HIGH", "weight": 25, "category": "AI/ML Attack", "desc": "Adversarial input attack against ML model", "mitre": "T1190"},
+    "data_extraction_llm":       {"patterns": [r"training.*data.*extract|model.*inversion|membership.*inference", r"PII.*extract.*model|memorization.*attack"], "severity": "HIGH", "weight": 30, "category": "AI/ML Attack", "desc": "Data extraction attack against language model", "mitre": "T1005"},
+
+    # === Blockchain/Crypto Attacks ===
+    "smart_contract_exploit":    {"patterns": [r"reentrancy.*attack|flash.?loan.*exploit|front.?run.*MEV", r"smart.*contract.*vuln|solidity.*overflow"], "severity": "CRITICAL", "weight": 40, "category": "Blockchain Attack", "desc": "Smart contract exploitation attempt", "mitre": "T1190"},
+    "wallet_theft":              {"patterns": [r"wallet.*drain|private.*key.*steal|seed.*phrase.*exfil", r"metamask.*phish|crypto.*wallet.*compromise"], "severity": "CRITICAL", "weight": 45, "category": "Blockchain Attack", "desc": "Cryptocurrency wallet theft or draining attack", "mitre": "T1005"},
+    "crypto_rug_pull":           {"patterns": [r"rug.*pull|liquidity.*drain|exit.*scam.*token", r"honeypot.*token|pump.*dump.*scheme"], "severity": "HIGH", "weight": 30, "category": "Blockchain Attack", "desc": "Cryptocurrency rug pull or exit scam indicators", "mitre": "T1190"},
+    "crypto_clipper":            {"patterns": [r"clipboard.*replace.*wallet|address.*swap.*crypto", r"clipper.*malware|BTC.*address.*hijack"], "severity": "CRITICAL", "weight": 40, "category": "Blockchain Attack", "desc": "Crypto clipboard hijacker (address swapper) detected", "mitre": "T1115"},
+
+    # === Advanced Network Attacks ===
+    "arp_poisoning":             {"patterns": [r"ARP.*spoof|ARP.*poison|arp.*cache.*tamper", r"ettercap|arpspoof|bettercap.*arp"], "severity": "HIGH", "weight": 30, "category": "Network Attack", "desc": "ARP spoofing/poisoning attack detected", "mitre": "T1557"},
+    "dns_rebinding":             {"patterns": [r"DNS.*rebind|rebinding.*attack|DNS.*pinning.*bypass", r"time-of-check.*DNS|TOCTOU.*DNS"], "severity": "HIGH", "weight": 30, "category": "Network Attack", "desc": "DNS rebinding attack detected", "mitre": "T1557"},
+    "bgp_hijacking":             {"patterns": [r"BGP.*hijack|route.*leak|AS.*path.*manipulat", r"prefix.*hijack|BGP.*anomal"], "severity": "CRITICAL", "weight": 50, "category": "Network Attack", "desc": "BGP route hijacking or prefix manipulation", "mitre": "T1557"},
+    "vlan_hopping":              {"patterns": [r"VLAN.*hop|802\.1Q.*double.*tag|DTP.*attack", r"trunk.*negotiat.*attack|switch.*spoof"], "severity": "HIGH", "weight": 25, "category": "Network Attack", "desc": "VLAN hopping attack detected", "mitre": "T1599"},
+    "ssl_stripping":             {"patterns": [r"SSL.*strip|HTTPS.*downgrade|sslstrip|HSTS.*bypass", r"certificate.*spoof|MitM.*TLS"], "severity": "HIGH", "weight": 30, "category": "Network Attack", "desc": "SSL/TLS stripping or downgrade attack", "mitre": "T1557.002"},
+    "wifi_attack":               {"patterns": [r"deauth.*attack|evil.*twin|karma.*attack|PMKID.*crack", r"WPA.*crack|aircrack|handshake.*capture"], "severity": "HIGH", "weight": 25, "category": "Network Attack", "desc": "Wireless network attack detected", "mitre": "T1557"},
+
+    # === Zero Trust / Identity ===
+    "mfa_fatigue":               {"patterns": [r"MFA.*fatigue|push.*spam|MFA.*bomb|MFA.*flood", r"repeated.*auth.*push|2FA.*bypass.*fatigue"], "severity": "CRITICAL", "weight": 35, "category": "Zero Trust Bypass", "desc": "MFA fatigue/push spam attack detected", "mitre": "T1621"},
+    "session_fixation":          {"patterns": [r"session.*fixat|session.*id.*inject|pre-set.*session", r"JSESSIONID.*manipulat|cookie.*fixat"], "severity": "HIGH", "weight": 25, "category": "Zero Trust Bypass", "desc": "Session fixation attack detected", "mitre": "T1550"},
+    "saml_attack":               {"patterns": [r"SAML.*forge|SAML.*inject|XML.*signature.*wrap", r"golden.*SAML|SAML.*response.*tamper"], "severity": "CRITICAL", "weight": 45, "category": "Zero Trust Bypass", "desc": "SAML token forgery or injection attack", "mitre": "T1606.002"},
+    "conditional_access_bypass": {"patterns": [r"conditional.*access.*bypass|device.*compliance.*spoof", r"trusted.*location.*spoof|Azure.*AD.*bypass"], "severity": "HIGH", "weight": 30, "category": "Zero Trust Bypass", "desc": "Conditional access policy bypass attempt", "mitre": "T1556"},
+    "kerberos_delegation_abuse": {"patterns": [r"unconstrained.*delegation|constrained.*delegation.*abuse", r"S4U2Self|S4U2Proxy|resource.*based.*delegation"], "severity": "CRITICAL", "weight": 40, "category": "Zero Trust Bypass", "desc": "Kerberos delegation abuse for privilege escalation", "mitre": "T1558"},
+    "password_spraying_cloud":   {"patterns": [r"password.*spray.*azure|password.*spray.*O365|spray.*cloud.*auth", r"AADSTS50126.*multiple|cloud.*brute.*force"], "severity": "HIGH", "weight": 25, "category": "Zero Trust Bypass", "desc": "Cloud password spraying attack detected", "mitre": "T1110.003"},
 }
 
 
@@ -241,6 +289,12 @@ MITRE_DESCRIPTIONS = {
     "T1052.001": "Exfil Over USB", "T1203": "Exploitation for Client Execution",
     "T1566.001": "Spearphishing Attachment", "T1566.002": "Spearphishing Link", "T1566.003": "Spearphishing via Service",
     "T1496": "Resource Hijacking (Cryptomining)",
+    # v3.0.0 additions
+    "T1528": "Steal Application Access Token", "T1621": "Multi-Factor Authentication Request Generation",
+    "T1550": "Use Alternate Authentication Material", "T1606.002": "SAML Tokens",
+    "T1556": "Modify Authentication Process", "T1558": "Steal or Forge Kerberos Tickets",
+    "T1557": "Adversary-in-the-Middle", "T1557.002": "ARP Cache Poisoning",
+    "T1599": "Network Boundary Bridging",
 }
 
 # ================= CORRELATION RULES =================
@@ -255,6 +309,12 @@ CORRELATION_RULES = [
     {"name": "Supply Chain + Persistence", "requires": ["dependency_confusion", "persistence"], "severity": "CRITICAL", "score_boost": 20, "desc": "Supply chain compromise with persistence — advanced persistent threat activity"},
     {"name": "Web Attack to Shell", "requires": ["sql_injection", "reverse_shell"], "severity": "CRITICAL", "score_boost": 20, "desc": "SQL injection leading to reverse shell — web application fully compromised"},
     {"name": "Phishing to Credential Dump", "requires": ["phishing_url", "credential_dumping"], "severity": "CRITICAL", "score_boost": 20, "desc": "Phishing campaign followed by credential dumping — social engineering attack chain"},
+    # v3.0.0 new correlations
+    {"name": "API Attack Chain", "requires": ["jwt_abuse", "broken_auth_api"], "severity": "CRITICAL", "score_boost": 20, "desc": "JWT abuse combined with BOLA — API fully compromised"},
+    {"name": "AI System Compromise", "requires": ["prompt_injection", "data_extraction_llm"], "severity": "CRITICAL", "score_boost": 25, "desc": "Prompt injection leading to training data extraction — AI system compromised"},
+    {"name": "MFA Bypass + Lateral Movement", "requires": ["mfa_fatigue", "lateral_movement"], "severity": "CRITICAL", "score_boost": 25, "desc": "MFA bypass via fatigue followed by lateral movement — identity compromise"},
+    {"name": "Crypto Theft Chain", "requires": ["wallet_theft", "crypto_clipper"], "severity": "CRITICAL", "score_boost": 25, "desc": "Wallet theft combined with clipboard hijacking — cryptocurrency attack chain"},
+    {"name": "Network MitM + Credential Theft", "requires": ["arp_poisoning", "credential_dumping"], "severity": "CRITICAL", "score_boost": 20, "desc": "ARP poisoning leading to credential capture — network-level MitM attack"},
 ]
 
 # ================= IOC EXTRACTION PATTERNS =================
@@ -323,14 +383,64 @@ class LogAnalyzer:
         self.correlations = []
         self.mitre_hits = defaultdict(int)
         self.timeline = []
+        self.file_md5 = ""
+        self.file_sha256 = ""
+        self.sigma_rules_loaded = 0
 
     def load(self):
+        # File integrity hashing
+        raw = self.filepath.read_bytes()
+        self.file_md5 = hashlib.md5(raw).hexdigest()
+        self.file_sha256 = hashlib.sha256(raw).hexdigest()
         if self.is_evtx:
             self.lines = parse_evtx_lib(self.filepath) if EVTX_LIB else parse_evtx_native(self.filepath)
         else:
             with open(self.filepath, "r", encoding="utf-8", errors="replace") as f:
                 self.lines = f.readlines()
         self.total_lines = len(self.lines)
+        # Load Sigma rules if available
+        self._load_sigma_rules()
+
+    def _load_sigma_rules(self):
+        """Load Sigma-format YAML detection rules from sigma_rules/ directory."""
+        if not YAML_AVAILABLE:
+            return
+        sigma_dir = Path(self.filepath).parent / "sigma_rules"
+        if not sigma_dir.exists():
+            sigma_dir = Path(".") / "sigma_rules"
+        if not sigma_dir.exists():
+            return
+        for yml_file in sigma_dir.glob("*.yml"):
+            try:
+                with open(yml_file, "r", encoding="utf-8") as f:
+                    rule = yaml.safe_load(f)
+                if not rule or "detection" not in rule:
+                    continue
+                title = rule.get("title", yml_file.stem)
+                level = rule.get("level", "medium").upper()
+                desc = rule.get("description", title)
+                mitre_id = ""
+                tags = rule.get("tags", [])
+                for tag in tags:
+                    if tag.startswith("attack.t"):
+                        mitre_id = tag.replace("attack.", "").upper()
+                        break
+                keywords = rule.get("detection", {}).get("keywords", [])
+                if isinstance(keywords, list) and keywords:
+                    patterns = [re.escape(k) if not k.startswith("*") else k.replace("*", ".*") for k in keywords]
+                    rule_id = f"sigma_{yml_file.stem}"
+                    weight_map = {"LOW": 5, "MEDIUM": 15, "HIGH": 25, "CRITICAL": 40}
+                    PATTERNS[rule_id] = {
+                        "patterns": patterns,
+                        "severity": level if level in weight_map else "MEDIUM",
+                        "weight": weight_map.get(level, 15),
+                        "category": "Sigma Rule",
+                        "desc": desc,
+                        "mitre": mitre_id,
+                    }
+                    self.sigma_rules_loaded += 1
+            except Exception:
+                continue
 
     def analyze(self):
         for lineno, line in enumerate(self.lines, 1):
@@ -440,6 +550,8 @@ class LogAnalyzer:
             "version": VERSION,
             "generated": datetime.now().isoformat(),
             "file": str(self.filepath),
+            "file_md5": self.file_md5,
+            "file_sha256": self.file_sha256,
             "file_size_bytes": self.filepath.stat().st_size,
             "total_lines": self.total_lines,
             "log_start": self.start_time,
@@ -452,6 +564,7 @@ class LogAnalyzer:
             "top_users": self.user_counter.most_common(10),
             "event_id_summary": self.event_id_counter.most_common(20),
             "detection_rules_total": len(PATTERNS),
+            "sigma_rules_loaded": self.sigma_rules_loaded,
             "detection_rules_triggered": len(self.findings),
             "mitre_techniques_detected": [
                 {"id": mid, "name": MITRE_DESCRIPTIONS.get(mid, ""), "hits": cnt}
@@ -485,6 +598,8 @@ class LogAnalyzer:
         out.append(f"│  Size    : {self.filepath.stat().st_size:,} bytes")
         out.append(f"│  Type    : {'EVTX (Windows Event Log)' if self.is_evtx else 'Text Log'}")
         out.append(f"│  Lines   : {self.total_lines:,}")
+        out.append(f"│  MD5     : {self.file_md5}")
+        out.append(f"│  SHA-256 : {self.file_sha256}")
         if self.start_time:
             out.append(f"│  Period  : {self.start_time}  →  {self.end_time}")
         out.append("└────────────────────────────────────────────────────────────────────┘")
@@ -495,7 +610,7 @@ class LogAnalyzer:
         out.append(f"│  Unique IPs     : {len(self.ip_counter):,}")
         out.append(f"│  Unique Users   : {len(self.user_counter):,}")
         out.append(f"│  Event IDs      : {len(self.event_id_counter):,} distinct")
-        out.append(f"│  Rules Loaded   : {len(PATTERNS)}")
+        out.append(f"│  Rules Loaded   : {len(PATTERNS)} (+ {self.sigma_rules_loaded} Sigma)")
         out.append(f"│  Rules Triggered: {len(self.findings)}")
         out.append(f"│  MITRE Techniques: {len(self.mitre_hits)}")
         out.append(f"│  IOCs Extracted : {sum(len(v) for v in self.iocs.values())}")
@@ -646,3 +761,516 @@ class LogAnalyzer:
         out.append("═" * 72)
 
         return "\n".join(out)
+
+    def export_stix(self, path):
+        """Export IOCs as a STIX 2.1 Bundle JSON."""
+        stix_objects = []
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        for ioc_type, values in self.iocs.items():
+            for val in list(values)[:200]:
+                stix_type = {
+                    "ipv4": "ipv4-addr", "url": "url", "domain": "domain-name",
+                    "email": "email-addr", "md5": "file", "sha1": "file",
+                    "sha256": "file",
+                }.get(ioc_type)
+                if not stix_type:
+                    continue
+                indicator_id = f"indicator--{uuid.uuid4()}"
+                if stix_type == "file":
+                    pattern = f"[file:hashes.'{ioc_type.upper()}' = '{val}']"
+                elif stix_type == "ipv4-addr":
+                    pattern = f"[ipv4-addr:value = '{val}']"
+                elif stix_type == "url":
+                    pattern = f"[url:value = '{val}']"
+                elif stix_type == "domain-name":
+                    pattern = f"[domain-name:value = '{val}']"
+                elif stix_type == "email-addr":
+                    pattern = f"[email-addr:value = '{val}']"
+                else:
+                    continue
+                stix_objects.append({
+                    "type": "indicator",
+                    "spec_version": "2.1",
+                    "id": indicator_id,
+                    "created": now_str,
+                    "modified": now_str,
+                    "name": f"{ioc_type.upper()}: {val[:80]}",
+                    "pattern": pattern,
+                    "pattern_type": "stix",
+                    "valid_from": now_str,
+                    "labels": ["malicious-activity"],
+                })
+        bundle = {
+            "type": "bundle",
+            "id": f"bundle--{uuid.uuid4()}",
+            "objects": stix_objects,
+        }
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(bundle, f, indent=2)
+
+
+# ================= GUI =================
+class ThreatScopeGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title(f"0xSABRY ThreatScope v{VERSION}")
+        self.root.geometry("1280x820")
+        self.root.minsize(960, 650)
+        self.root.configure(bg=BG_DARK)
+        self.file_path = None
+        self.analyzer = None
+        self._build_ui()
+
+    def _build_ui(self):
+        header = tk.Frame(self.root, bg="#111111", height=64)
+        header.pack(fill=tk.X)
+        header.pack_propagate(False)
+        tk.Label(header, text="⚡ 0xSABRY ThreatScope", fg=ACCENT, bg="#111111",
+                 font=("Segoe UI", 17, "bold")).pack(side=tk.LEFT, padx=20, pady=12)
+        tk.Label(header, text="Advanced Log Intelligence & Threat Detection Engine", fg=TEXT_DIM, bg="#111111",
+                 font=("Segoe UI", 10)).pack(side=tk.LEFT, pady=14)
+        tk.Label(header, text=f"v{VERSION}", fg=ACCENT2, bg="#111111",
+                 font=("Segoe UI", 9, "bold")).pack(side=tk.RIGHT, padx=20)
+
+        toolbar = tk.Frame(self.root, bg=BG_PANEL, pady=8)
+        toolbar.pack(fill=tk.X)
+        btn_style = {"font": ("Segoe UI", 10, "bold"), "relief": tk.FLAT, "cursor": "hand2", "padx": 16, "pady": 6}
+
+        self.btn_load = tk.Button(toolbar, text="📂  Load Log", bg=BG_WIDGET, fg=ACCENT,
+                                   command=self.load_file, **btn_style)
+        self.btn_load.pack(side=tk.LEFT, padx=(12, 4))
+        self.btn_analyze = tk.Button(toolbar, text="🔍  Analyze", bg="#1565c0", fg="white",
+                                      disabledforeground="#90caf9", activebackground="#1976d2",
+                                      command=self.start_analysis, state=tk.DISABLED, **btn_style)
+        self.btn_analyze.pack(side=tk.LEFT, padx=4)
+        self.btn_export = tk.Button(toolbar, text="💾  Export JSON", bg=BG_WIDGET, fg=GREEN,
+                                     command=self.export_json, state=tk.DISABLED, **btn_style)
+        self.btn_export.pack(side=tk.LEFT, padx=4)
+        self.btn_stix = tk.Button(toolbar, text="🔗  Export STIX", bg=BG_WIDGET, fg=ACCENT2,
+                                   command=self.export_stix, state=tk.DISABLED, **btn_style)
+        self.btn_stix.pack(side=tk.LEFT, padx=4)
+        self.btn_clear = tk.Button(toolbar, text="🗑  Clear", bg=BG_WIDGET, fg=TEXT_DIM,
+                                    command=self.clear_output, **btn_style)
+        self.btn_clear.pack(side=tk.LEFT, padx=4)
+        self.file_label = tk.Label(toolbar, text="No file loaded", fg=TEXT_DIM, bg=BG_PANEL, font=("Segoe UI", 9))
+        self.file_label.pack(side=tk.LEFT, padx=16)
+        num_cats = len(set(v["category"] for v in PATTERNS.values()))
+        tk.Label(toolbar, text=f"🛡  {len(PATTERNS)} Detection Rules  |  {num_cats} Categories", fg=YELLOW, bg=BG_PANEL,
+                 font=("Segoe UI", 9, "bold")).pack(side=tk.RIGHT, padx=16)
+
+        stats_row = tk.Frame(self.root, bg=BG_DARK)
+        stats_row.pack(fill=tk.X, padx=12, pady=(8, 0))
+        self.stat_labels = {}
+        stats = [
+            ("score", "THREAT SCORE", "0%", RED), ("level", "THREAT LEVEL", "—", TEXT_DIM),
+            ("lines", "LINES", "0", ACCENT), ("ips", "UNIQUE IPs", "0", ACCENT),
+            ("users", "USERS", "0", ACCENT), ("findings", "FINDINGS", "0", YELLOW),
+            ("mitre", "MITRE TECHNIQUES", "0", ACCENT2), ("iocs", "IOCs EXTRACTED", "0", GREEN),
+            ("corr", "CORRELATIONS", "0", CRITICAL),
+        ]
+        for key, title, default, color in stats:
+            card = tk.Frame(stats_row, bg=BG_CARD, padx=12, pady=10, relief=tk.FLAT)
+            card.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=3)
+            tk.Label(card, text=title, fg=TEXT_DIM, bg=BG_CARD, font=("Segoe UI", 7)).pack(anchor=tk.W)
+            lbl = tk.Label(card, text=default, fg=color, bg=BG_CARD, font=("Segoe UI", 13, "bold"))
+            lbl.pack(anchor=tk.W)
+            self.stat_labels[key] = lbl
+
+        prog_frame = tk.Frame(self.root, bg=BG_DARK)
+        prog_frame.pack(fill=tk.X, padx=12, pady=4)
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("Threat.Horizontal.TProgressbar", troughcolor=BG_WIDGET, background=ACCENT,
+                         darkcolor=ACCENT, lightcolor=ACCENT, bordercolor=BG_WIDGET, thickness=4)
+        self.progress = ttk.Progressbar(prog_frame, mode="indeterminate",
+                                         style="Threat.Horizontal.TProgressbar", length=400)
+        self.progress.pack(side=tk.LEFT)
+        self.status_label = tk.Label(prog_frame, text="Ready", fg=TEXT_DIM, bg=BG_DARK, font=("Segoe UI", 9))
+        self.status_label.pack(side=tk.LEFT, padx=10)
+
+        content_frame = tk.Frame(self.root, bg=BG_DARK)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(4, 8))
+        tab_bar = tk.Frame(content_frame, bg=BG_DARK)
+        tab_bar.pack(fill=tk.X, side=tk.TOP)
+        self.tab_frames = {}
+        self.tab_buttons = {}
+        tab_defs = [
+            ("report", "📋 Full Report"), ("findings", "🚨 Findings"), ("ips", "🌐 IP & Users"),
+            ("timeline", "⏱ Timeline"), ("mitre", "🎯 MITRE ATT&CK"), ("iocs", "🔎 IOCs"), ("raw", "📄 Raw Log"),
+        ]
+        self.active_tab = tk.StringVar(value="report")
+        for tab_id, tab_title in tab_defs:
+            btn = tk.Button(tab_bar, text=tab_title, font=("Segoe UI", 9, "bold"), relief=tk.FLAT,
+                            padx=12, pady=6, cursor="hand2", command=lambda t=tab_id: self.switch_tab(t))
+            btn.pack(side=tk.LEFT)
+            self.tab_buttons[tab_id] = btn
+
+        self.tab_area = tk.Frame(content_frame, bg=BG_CARD)
+        self.tab_area.pack(fill=tk.BOTH, expand=True)
+        text_opts = dict(bg=BG_CARD, fg=TEXT_MAIN, insertbackground="white",
+                         selectbackground=ACCENT2, relief=tk.FLAT, wrap=tk.NONE, padx=10, pady=10)
+        for tab_id, _ in tab_defs:
+            frame = tk.Frame(self.tab_area, bg=BG_CARD)
+            self.tab_frames[tab_id] = frame
+            vsb = tk.Scrollbar(frame, bg=BG_WIDGET, troughcolor=BG_DARK, activebackground=ACCENT, width=10)
+            hsb = tk.Scrollbar(frame, orient=tk.HORIZONTAL, bg=BG_WIDGET, troughcolor=BG_DARK,
+                               activebackground=ACCENT, width=8)
+            txt = tk.Text(frame, yscrollcommand=vsb.set, xscrollcommand=hsb.set, font=FONT_MONO, **text_opts)
+            vsb.config(command=txt.yview)
+            hsb.config(command=txt.xview)
+            vsb.pack(side=tk.RIGHT, fill=tk.Y)
+            hsb.pack(side=tk.BOTTOM, fill=tk.X)
+            txt.pack(fill=tk.BOTH, expand=True)
+            txt.config(state=tk.DISABLED)
+            frame._text = txt
+
+        for tab_id in ("report", "findings", "timeline", "mitre", "iocs"):
+            rt = self.tab_frames[tab_id]._text
+            rt.tag_configure("critical", foreground=CRITICAL, font=("Cascadia Code", 10, "bold"))
+            rt.tag_configure("high", foreground=RED)
+            rt.tag_configure("medium", foreground=ORANGE)
+            rt.tag_configure("low", foreground=YELLOW)
+            rt.tag_configure("info", foreground=GREEN)
+            rt.tag_configure("header", foreground=ACCENT, font=("Cascadia Code", 10, "bold"))
+            rt.tag_configure("accent", foreground=ACCENT2)
+            rt.tag_configure("dim", foreground=TEXT_DIM)
+            rt.tag_configure("mitre_id", foreground=ACCENT2, font=("Cascadia Code", 10, "bold"))
+            rt.tag_configure("ioc", foreground=GREEN)
+        self.switch_tab("report")
+
+    def switch_tab(self, tab_id):
+        self.active_tab.set(tab_id)
+        for f in self.tab_frames.values():
+            f.pack_forget()
+        self.tab_frames[tab_id].pack(fill=tk.BOTH, expand=True)
+        for t, btn in self.tab_buttons.items():
+            btn.config(bg=ACCENT if t == tab_id else BG_DARK, fg=BG_DARK if t == tab_id else TEXT_DIM)
+
+    def _write(self, tab_id, text, tag=None):
+        txt = self.tab_frames[tab_id]._text
+        txt.config(state=tk.NORMAL)
+        if tag:
+            txt.insert(tk.END, text, tag)
+        else:
+            txt.insert(tk.END, text)
+        txt.config(state=tk.DISABLED)
+
+    def _clear_tab(self, tab_id):
+        txt = self.tab_frames[tab_id]._text
+        txt.config(state=tk.NORMAL)
+        txt.delete("1.0", tk.END)
+        txt.config(state=tk.DISABLED)
+
+    def load_file(self):
+        path = filedialog.askopenfilename(
+            title="Load Log File",
+            filetypes=[("All Supported", "*.log *.txt *.evtx"), ("Log Files", "*.log"),
+                       ("Text Files", "*.txt"), ("EVTX Files", "*.evtx"), ("All Files", "*.*")]
+        )
+        if path:
+            self.file_path = path
+            name = Path(path).name
+            size = Path(path).stat().st_size
+            size_str = f"{size:,} bytes" if size < 1024*1024 else f"{size/1024/1024:.1f} MB"
+            self.file_label.config(text=f"📄 {name}  ({size_str})", fg=ACCENT)
+            self.btn_analyze.config(state=tk.NORMAL, bg="#1565c0")
+            self.set_status(f"Loaded: {name}")
+
+    def start_analysis(self):
+        if not self.file_path:
+            return
+        self.btn_analyze.config(state=tk.DISABLED, bg="#1565c0")
+        self.btn_export.config(state=tk.DISABLED)
+        self.btn_stix.config(state=tk.DISABLED)
+        threading.Thread(target=self.run_analysis, daemon=True).start()
+
+    def set_status(self, msg):
+        self.status_label.config(text=msg)
+
+    def run_analysis(self):
+        self.root.after(0, lambda: self.progress.start(12))
+        self.root.after(0, lambda: self.set_status("Loading file..."))
+        try:
+            a = LogAnalyzer(self.file_path)
+            a.load()
+            self.root.after(0, lambda: self.set_status(f"Analyzing {a.total_lines:,} lines with {len(PATTERNS)} rules..."))
+            a.analyze()
+            self.analyzer = a
+            self.root.after(0, self._update_ui)
+        except Exception as e:
+            self.root.after(0, lambda: messagebox.showerror("Error", str(e)))
+            self.root.after(0, lambda: self.set_status("Error during analysis"))
+        finally:
+            self.root.after(0, lambda: self.progress.stop())
+            self.root.after(0, lambda: self.btn_analyze.config(state=tk.NORMAL, bg="#1565c0"))
+
+    def _update_ui(self):
+        a = self.analyzer
+        score = a.calculate_threat_score()
+        level, level_color = a.get_threat_level(score)
+        total_iocs = sum(len(v) for v in a.iocs.values())
+
+        self.stat_labels["score"].config(text=f"{score}%", fg=level_color)
+        self.stat_labels["level"].config(text=level, fg=level_color)
+        self.stat_labels["lines"].config(text=f"{a.total_lines:,}", fg=ACCENT)
+        self.stat_labels["ips"].config(text=f"{len(a.ip_counter):,}", fg=ACCENT)
+        self.stat_labels["users"].config(text=f"{len(a.user_counter):,}", fg=ACCENT)
+        self.stat_labels["findings"].config(text=f"{len(a.findings)}", fg=YELLOW)
+        self.stat_labels["mitre"].config(text=f"{len(a.mitre_hits)}", fg=ACCENT2)
+        self.stat_labels["iocs"].config(text=f"{total_iocs}", fg=GREEN)
+        self.stat_labels["corr"].config(text=f"{len(a.correlations)}", fg=CRITICAL if a.correlations else GREEN)
+
+        # Report tab
+        self._clear_tab("report")
+        report = a.generate_report()
+        for line in report.split("\n"):
+            tag = None
+            if "CRITICAL" in line or "🔴" in line: tag = "critical"
+            elif "HIGH" in line or "🟠" in line: tag = "high"
+            elif "MEDIUM" in line or "🟡" in line: tag = "medium"
+            elif "LOW" in line or "🟢" in line: tag = "low"
+            elif "INFO" in line or "🔵" in line: tag = "info"
+            elif line.startswith("═") or line.startswith("┌") or line.startswith("└"): tag = "header"
+            elif "URGENT" in line or "CRITICAL:" in line: tag = "critical"
+            self._write("report", line + "\n", tag)
+
+        # Findings tab
+        self._clear_tab("findings")
+        if a.findings:
+            grouped = a.get_findings_by_category()
+            for grp, items in sorted(grouped.items()):
+                self._write("findings", f"\n{'━'*60}\n  ▶ {grp.upper()}\n{'━'*60}\n", "header")
+                for cat, flist in items:
+                    info = PATTERNS[cat]
+                    icons = {"CRITICAL": "🔴", "HIGH": "🟠", "MEDIUM": "🟡", "LOW": "🟢", "INFO": "🔵"}
+                    icon = icons.get(info["severity"], "⚪")
+                    sev_tag = info["severity"].lower() if info["severity"].lower() in ("critical","high","medium","low","info") else None
+                    self._write("findings", f"\n{icon} [{info['severity']}] {info['desc']}\n", sev_tag)
+                    self._write("findings", f"   Rule: {cat}  |  MITRE: {info.get('mitre','')}  |  Hits: {len(flist)}\n", "dim")
+                    for ln, content in flist[:10]:
+                        self._write("findings", f"   Line {ln:>6}: {content[:120]}\n")
+                    if len(flist) > 10:
+                        self._write("findings", f"   ... {len(flist)-10} more hits\n", "dim")
+        else:
+            self._write("findings", "\n  ✅ No suspicious patterns detected.\n", "info")
+
+        # IP / Users tab
+        self._clear_tab("ips")
+        self._write("ips", f"\n  TOP IP ADDRESSES  (Total unique: {len(a.ip_counter):,})\n", "header")
+        self._write("ips", "  " + "─"*60 + "\n")
+        if a.ip_counter:
+            max_count = a.ip_counter.most_common(1)[0][1]
+            for ip, cnt in a.ip_counter.most_common(50):
+                bar_len = int((cnt / max_count) * 30) if max_count else 0
+                bar = "▌" * bar_len
+                self._write("ips", f"  {ip:<20} {bar:<32} {cnt:>6} hits\n")
+        else:
+            self._write("ips", "\n  No IP addresses found.\n", "dim")
+        if a.user_counter:
+            self._write("ips", f"\n\n  TOP USERNAMES  (Total unique: {len(a.user_counter):,})\n", "header")
+            self._write("ips", "  " + "─"*60 + "\n")
+            for user, cnt in a.user_counter.most_common(30):
+                self._write("ips", f"  {user:<30} {cnt:>6} occurrences\n")
+        if a.event_id_counter:
+            self._write("ips", f"\n\n  TOP EVENT IDs\n", "header")
+            self._write("ips", "  " + "─"*60 + "\n")
+            known_ids = {"4624": "Successful Logon", "4625": "Failed Logon", "4648": "Explicit Credential Logon",
+                         "4672": "Special Privileges", "4698": "Sched Task Created", "4702": "Sched Task Updated",
+                         "4719": "Audit Policy Changed", "4720": "User Account Created",
+                         "4740": "Account Locked Out", "4769": "Kerberos TGS Req",
+                         "7045": "New Service", "1102": "Audit Log Cleared", "104": "System Log Cleared",
+                         "4778": "RDP Session Reconnected", "5861": "WMI Subscription"}
+            for eid, cnt in a.event_id_counter.most_common(20):
+                desc = known_ids.get(eid, "")
+                self._write("ips", f"  EventID {eid:<8} {cnt:>6}x   {desc}\n")
+
+        # Timeline tab
+        self._clear_tab("timeline")
+        self._write("timeline", f"\n  ⏱ TIMELINE OF DETECTED EVENTS  ({len(a.timeline)} events)\n", "header")
+        self._write("timeline", "  " + "─"*80 + "\n")
+        if a.timeline:
+            sorted_events = sorted(a.timeline, key=lambda x: x["time"])
+            sev_tags = {"CRITICAL": "critical", "HIGH": "high", "MEDIUM": "medium", "LOW": "low", "INFO": "info"}
+            for evt in sorted_events[:500]:
+                sev_icon = {"CRITICAL": "🔴", "HIGH": "🟠", "MEDIUM": "🟡", "LOW": "🟢", "INFO": "🔵"}.get(evt["severity"], "⚪")
+                tag = sev_tags.get(evt["severity"])
+                self._write("timeline", f"  {evt['time']}  ", "dim")
+                self._write("timeline", f"{sev_icon} [{evt['severity']:<8}] ", tag)
+                self._write("timeline", f"[{evt['category']}] {evt['rule']}\n", tag)
+                self._write("timeline", f"    Line {evt['line']}: {evt['content'][:100]}\n", "dim")
+            if len(a.timeline) > 500:
+                self._write("timeline", f"\n  ... showing first 500 of {len(a.timeline)} events ...\n", "dim")
+        else:
+            self._write("timeline", "\n  No timeline events detected.\n", "dim")
+        if a.correlations:
+            self._write("timeline", f"\n\n  ⚡ ATTACK CHAIN CORRELATIONS ({len(a.correlations)} detected)\n", "critical")
+            self._write("timeline", "  " + "─"*80 + "\n")
+            for corr in a.correlations:
+                self._write("timeline", f"  🔴 {corr['name']}\n", "critical")
+                self._write("timeline", f"     {corr['desc']}\n", "high")
+                self._write("timeline", f"     Signals triggered: {', '.join(corr['requires'])}\n", "dim")
+
+        # MITRE ATT&CK tab
+        self._clear_tab("mitre")
+        self._write("mitre", f"\n  🎯 MITRE ATT&CK TECHNIQUE COVERAGE  ({len(a.mitre_hits)} techniques triggered)\n", "header")
+        self._write("mitre", "  " + "─"*80 + "\n\n")
+        if a.mitre_hits:
+            self._write("mitre", f"  {'TECHNIQUE ID':<16} {'DESCRIPTION':<50} {'HITS':>6}\n", "header")
+            self._write("mitre", "  " + "─"*76 + "\n")
+            for mid, cnt in sorted(a.mitre_hits.items(), key=lambda x: -x[1]):
+                desc = MITRE_DESCRIPTIONS.get(mid, "Unknown Technique")
+                self._write("mitre", f"  {mid:<16}", "mitre_id")
+                self._write("mitre", f" {desc:<50}", None)
+                self._write("mitre", f" {cnt:>6} hits\n", "accent")
+            self._write("mitre", f"\n\n  COVERAGE MAP  (detected techniques shaded)\n", "header")
+            self._write("mitre", "  " + "─"*60 + "\n")
+            detected_cats = set()
+            for mid in a.mitre_hits:
+                name = MITRE_DESCRIPTIONS.get(mid, "")
+                if "Logon" in name or "Account" in name: detected_cats.add("Initial Access / Auth")
+                elif "Inject" in name or "Token" in name: detected_cats.add("Defense Evasion / Injection")
+                elif "Kerberos" in name or "Ticket" in name: detected_cats.add("Credential Access")
+                elif "C2" in name or "Protocol" in name or "Proxy" in name: detected_cats.add("C2")
+                elif "Exfil" in name or "Clipboard" in name: detected_cats.add("Exfiltration")
+            all_cats = ["Initial Access / Auth", "Execution", "Persistence", "Privilege Escalation",
+                        "Defense Evasion / Injection", "Credential Access", "Discovery",
+                        "Lateral Movement", "C2", "Exfiltration", "Impact"]
+            for cat in all_cats:
+                if cat in detected_cats:
+                    self._write("mitre", f"  ██ {cat}\n", "critical")
+                else:
+                    self._write("mitre", f"  ░░ {cat}\n", "dim")
+        else:
+            self._write("mitre", "\n  No MITRE techniques triggered.\n", "dim")
+
+        # IOC tab
+        self._clear_tab("iocs")
+        self._write("iocs", f"\n  🔎 INDICATORS OF COMPROMISE  ({total_iocs} total extracted)\n", "header")
+        self._write("iocs", "  " + "─"*70 + "\n")
+        ioc_labels = {"sha256": "SHA-256 Hashes", "sha1": "SHA-1 Hashes", "md5": "MD5 Hashes",
+                      "url": "URLs", "domain": "Domains", "ipv4": "IP Addresses",
+                      "email": "Email Addresses", "cve": "CVE Identifiers"}
+        if any(a.iocs.values()):
+            for ioc_type in ["cve", "sha256", "sha1", "md5", "ipv4", "url", "domain", "email"]:
+                vals = sorted(a.iocs.get(ioc_type, set()))
+                if vals:
+                    lbl = ioc_labels.get(ioc_type, ioc_type.upper())
+                    self._write("iocs", f"\n  ▶ {lbl} ({len(vals)} found)\n", "header")
+                    self._write("iocs", "  " + "─"*60 + "\n")
+                    for v in vals[:100]:
+                        self._write("iocs", f"  • {v}\n", "ioc")
+                    if len(vals) > 100:
+                        self._write("iocs", f"  ... and {len(vals)-100} more\n", "dim")
+        else:
+            self._write("iocs", "\n  No IOCs extracted from this log file.\n", "dim")
+
+        # Raw Log tab
+        self._clear_tab("raw")
+        MAX_LINES = 2000
+        for i, line in enumerate(a.lines[:MAX_LINES]):
+            self._write("raw", f"{i+1:>6}  {line if isinstance(line, str) else repr(line)}")
+        if a.total_lines > MAX_LINES:
+            self._write("raw", f"\n... (showing first {MAX_LINES:,} of {a.total_lines:,} lines) ...")
+
+        self.btn_export.config(state=tk.NORMAL)
+        self.btn_stix.config(state=tk.NORMAL)
+        self.set_status(
+            f"Analysis complete — {a.total_lines:,} lines | {len(a.findings)} findings | "
+            f"Score: {score}% ({level}) | MITRE: {len(a.mitre_hits)} techniques | "
+            f"IOCs: {total_iocs} | Correlations: {len(a.correlations)}"
+        )
+        self.switch_tab("report")
+
+    def clear_output(self):
+        for tab_id in self.tab_frames:
+            self._clear_tab(tab_id)
+        defaults = {"score": "0%", "level": "—", "lines": "0", "ips": "0",
+                     "users": "0", "findings": "0", "mitre": "0", "iocs": "0", "corr": "0"}
+        for key, lbl in self.stat_labels.items():
+            lbl.config(text=defaults.get(key, "0"), fg=TEXT_DIM)
+        self.file_label.config(text="No file loaded", fg=TEXT_DIM)
+        self.file_path = None
+        self.analyzer = None
+        self.btn_analyze.config(state=tk.DISABLED, bg="#1565c0")
+        self.btn_export.config(state=tk.DISABLED)
+        self.btn_stix.config(state=tk.DISABLED)
+        self.set_status("Ready")
+
+    def export_json(self):
+        if self.analyzer:
+            path = filedialog.asksaveasfilename(defaultextension=".json",
+                                                 filetypes=[("JSON", "*.json")], title="Export Report as JSON")
+            if path:
+                self.analyzer.export_json(path)
+                messagebox.showinfo("Export Done", f"Report saved to:\n{path}")
+
+    def export_stix(self):
+        if self.analyzer:
+            path = filedialog.asksaveasfilename(defaultextension=".json",
+                                                 filetypes=[("STIX JSON", "*.json")], title="Export STIX 2.1 Bundle")
+            if path:
+                self.analyzer.export_stix(path)
+                messagebox.showinfo("STIX Export Done", f"STIX 2.1 bundle saved to:\n{path}")
+
+
+# ================= CLI MODE =================
+def run_cli(args):
+    """Command-line analysis mode."""
+    filepath = args.file
+    if not Path(filepath).exists():
+        print(f"Error: File not found: {filepath}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"⚡ 0xSABRY ThreatScope v{VERSION} — CLI Mode")
+    print(f"Loading: {filepath}")
+
+    analyzer = LogAnalyzer(filepath)
+    analyzer.load()
+    print(f"Loaded {analyzer.total_lines:,} lines  |  MD5: {analyzer.file_md5}")
+    print(f"Analyzing with {len(PATTERNS)} detection rules...")
+    analyzer.analyze()
+
+    score = analyzer.calculate_threat_score()
+    level, _ = analyzer.get_threat_level(score)
+    total_iocs = sum(len(v) for v in analyzer.iocs.values())
+    print(f"\nResults: Score={score}% Level={level} Findings={len(analyzer.findings)} "
+          f"MITRE={len(analyzer.mitre_hits)} IOCs={total_iocs} Correlations={len(analyzer.correlations)}")
+
+    if args.report:
+        print("\n" + analyzer.generate_report())
+
+    if args.json:
+        analyzer.export_json(args.json)
+        print(f"\n💾 JSON report saved to: {args.json}")
+
+    if args.stix:
+        analyzer.export_stix(args.stix)
+        print(f"\n🔗 STIX 2.1 bundle saved to: {args.stix}")
+
+
+# ================= ENTRY POINT =================
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description=f"0xSABRY ThreatScope v{VERSION} — Advanced Log Intelligence & Threat Detection Engine",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python 0xSABRY_ThreatScope.py                              Launch GUI
+  python 0xSABRY_ThreatScope.py -f server.log --report       Analyze and print report
+  python 0xSABRY_ThreatScope.py -f data.evtx -j report.json  Analyze and export JSON
+  python 0xSABRY_ThreatScope.py -f log.txt --stix iocs.json  Export IOCs as STIX 2.1
+        """
+    )
+    parser.add_argument("-f", "--file", help="Path to log file to analyze")
+    parser.add_argument("-j", "--json", help="Export JSON report to specified path")
+    parser.add_argument("-r", "--report", action="store_true", help="Print text report to stdout")
+    parser.add_argument("--stix", help="Export STIX 2.1 IOC bundle to specified path")
+
+    args = parser.parse_args()
+
+    if args.file:
+        run_cli(args)
+    else:
+        root = tk.Tk()
+        ThreatScopeGUI(root)
+        root.mainloop()

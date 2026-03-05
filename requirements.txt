@@ -1,0 +1,8 @@
+# ThreatScope - Optional Dependencies
+# Core functionality requires only Python 3.8+ stdlib (tkinter, re, json, struct)
+
+# Better EVTX parsing (recommended for .evtx files)
+python-evtx>=0.7.0
+
+# Sigma rule support (enables loading YAML-based detection rules)
+pyyaml>=6.0
