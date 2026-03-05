@@ -230,5 +230,10 @@ MIT License — see [LICENSE](LICENSE)
 ---
 
 <div align="center">
+
 Made with ❤️ by <a href="https://github.com/0xsabry">0xSABRY</a> — SOC Analyst & Security Researcher
+
+[![LinkedIn](https://img.shields.io/badge/Connect_on_LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/mohamed-sabry-hamdan/)
+[![GitHub](https://img.shields.io/badge/Follow_on_GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/0xsabry)
+
 </div>
