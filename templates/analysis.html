@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Analysis{% endblock %}
+{% block page_title %}Analysis Results{% endblock %}
+
+{% block content %}
+{% if results %}
+<div class="findings-container" id="findings-container">
+    <!-- Filter Bar -->
+    <div class="filter-bar" id="filter-bar">
+        <div class="filter-group">
+            <label>Severity</label>
+            <select id="severity-filter" onchange="filterFindings()">
+                <option value="">All</option>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Type</label>
+            <select id="type-filter" onchange="filterFindings()">
+                <option value="">All</option>
+                <option value="builtin">Built-in Rules</option>
+                <option value="sigma">Sigma Rules</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <input type="text" id="search-filter" placeholder="Search findings..." oninput="filterFindings()">
+        </div>
+        <div class="filter-stats">
+            <span id="filtered-count">{{ results.findings|length }}</span> findings
+        </div>
+    </div>
+
+    <!-- Findings List -->
+    <div class="findings-grid" id="findings-grid">
+        {% for finding in results.findings %}
+        <div class="finding-card severity-border-{{ finding.severity|lower }}" data-severity="{{ finding.severity|lower }}" data-type="{{ finding.rule_type|default('builtin') }}" id="finding-{{ loop.index }}">
+            <div class="finding-header">
+                <span class="severity-badge {{ finding.severity|lower }}">{{ finding.severity|upper }}</span>
+                <span class="finding-title">{{ finding.title }}</span>
+                {% if finding.mitre %}<span class="mitre-tag">{{ finding.mitre }}</span>{% endif %}
+            </div>
+            <p class="finding-desc">{{ finding.description }}</p>
+            <div class="finding-meta">
+                {% if finding.timestamp %}<span><i class="fas fa-clock"></i> {{ finding.timestamp }}</span>{% endif %}
+                {% if finding.line_number %}<span><i class="fas fa-hashtag"></i> Line {{ finding.line_number }}</span>{% endif %}
+                {% if finding.rule_type %}<span><i class="fas fa-tag"></i> {{ finding.rule_type }}</span>{% endif %}
+            </div>
+            {% if finding.raw %}
+            <details class="finding-raw">
+                <summary>View Raw Log</summary>
+                <pre><code>{{ finding.raw[:500] }}</code></pre>
+            </details>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="empty-state" id="empty-state-analysis"><div class="empty-icon"><i class="fas fa-search"></i></div><h2>No Analysis Results</h2><p>Upload and analyze a log file from the Dashboard</p></div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterFindings() {
+    const sev = document.getElementById('severity-filter').value;
+    const type = document.getElementById('type-filter').value;
+    const search = document.getElementById('search-filter').value.toLowerCase();
+    let count = 0;
+    document.querySelectorAll('.finding-card').forEach(card => {
+        const show = (!sev || card.dataset.severity === sev) &&
+                     (!type || card.dataset.type === type) &&
+                     (!search || card.textContent.toLowerCase().includes(search));
+        card.style.display = show ? '' : 'none';
+        if (show) count++;
+    });
+    document.getElementById('filtered-count').textContent = count;
+}
+</script>
+{% endblock %}

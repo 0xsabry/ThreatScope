@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}MITRE ATT&CK{% endblock %}
+{% block page_title %}MITRE ATT&CK Coverage Heatmap{% endblock %}
+
+{% block content %}
+<div class="mitre-container" id="mitre-container">
+    {% if results and results.mitre_hits %}
+    <div class="mitre-legend" id="mitre-legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#10b981"></span> Strong Coverage (5+)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> Moderate (2-4)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> Weak (1)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#1e293b"></span> No Coverage</span>
+    </div>
+
+    <div class="mitre-grid" id="mitre-grid">
+        {% for tactic_id, tactic_name in tactics.items() %}
+        <div class="mitre-tactic" id="tactic-{{ tactic_id }}">
+            <div class="tactic-header">
+                <span class="tactic-id">{{ tactic_id }}</span>
+                <span class="tactic-name">{{ tactic_name }}</span>
+            </div>
+            <div class="technique-list">
+                {% for tech, count in results.mitre_hits.items() %}
+                {% set parent_tactic = tech[:5] if tech.startswith('T') else '' %}
+                <div class="technique-cell {% if count >= 5 %}coverage-high{% elif count >= 2 %}coverage-medium{% else %}coverage-low{% endif %}" title="{{ tech }} ({{ count }} hits)">
+                    <span class="tech-id">{{ tech }}</span>
+                    <span class="tech-count">{{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mitre-stats" id="mitre-stats">
+        <div class="card">
+            <h4>Coverage Summary</h4>
+            <p><strong>{{ results.mitre_hits|length }}</strong> unique techniques detected</p>
+            <p><strong>{{ results.mitre_hits.values()|sum }}</strong> total technique hits</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="empty-icon"><i class="fas fa-chess-board"></i></div><h2>No MITRE ATT&CK Data</h2><p>Run an analysis to see technique coverage</p></div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Investigation Dashboard{% endblock %}
+
+{% block content %}
+<!-- Upload Section -->
+<div class="upload-section" id="upload-section">
+    <div class="upload-zone" id="upload-zone" ondrop="handleDrop(event)" ondragover="event.preventDefault()" ondragenter="this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')">
+        <div class="upload-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+        <h3>Drop log files here or click to upload</h3>
+        <p>Supports: .evtx .log .txt .json .csv .syslog .xml</p>
+        <input type="file" id="file-input" accept=".evtx,.log,.txt,.json,.csv,.syslog,.xml" style="display:none" onchange="handleFileSelect(this)">
+        <button class="btn btn-primary" onclick="document.getElementById('file-input').click()" id="upload-btn">
+            <i class="fas fa-folder-open"></i> Select File
+        </button>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+{% if results %}
+<div class="stats-grid" id="stats-grid">
+    <div class="stat-card stat-threat" id="stat-threat">
+        <div class="stat-icon"><i class="fas fa-bolt"></i></div>
+        <div class="stat-info">
+            <span class="stat-value" style="color: {{ results.threat_color }}">{{ results.threat_score }}%</span>
+            <span class="stat-label">Threat Score</span>
+        </div>
+    </div>
+    <div class="stat-card" id="stat-findings">
+        <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="stat-info">
+            <span class="stat-value">{{ results.summary.total_findings|format_number }}</span>
+            <span class="stat-label">Findings</span>
+        </div>
+    </div>
+    <div class="stat-card" id="stat-critical">
+        <div class="stat-icon critical"><i class="fas fa-skull-crossbones"></i></div>
+        <div class="stat-info">
+            <span class="stat-value text-critical">{{ results.summary.critical }}</span>
+            <span class="stat-label">Critical</span>
+        </div>
+    </div>
+    <div class="stat-card" id="stat-high">
+        <div class="stat-icon high"><i class="fas fa-fire"></i></div>
+        <div class="stat-info">
+            <span class="stat-value text-high">{{ results.summary.high }}</span>
+            <span class="stat-label">High</span>
+        </div>
+    </div>
+    <div class="stat-card" id="stat-mitre">
+        <div class="stat-icon"><i class="fas fa-chess-board"></i></div>
+        <div class="stat-info">
+            <span class="stat-value text-accent">{{ results.summary.mitre_techniques }}</span>
+            <span class="stat-label">MITRE Techniques</span>
+        </div>
+    </div>
+    <div class="stat-card" id="stat-iocs">
+        <div class="stat-icon"><i class="fas fa-fingerprint"></i></div>
+        <div class="stat-info">
+            <span class="stat-value text-success">{{ results.summary.total_iocs }}</span>
+            <span class="stat-label">IOCs</span>
+        </div>
+    </div>
+    <div class="stat-card" id="stat-correlations">
+        <div class="stat-icon"><i class="fas fa-link"></i></div>
+        <div class="stat-info">
+            <span class="stat-value text-warning">{{ results.summary.correlations }}</span>
+            <span class="stat-label">Correlations</span>
+        </div>
+    </div>
+    <div class="stat-card" id="stat-events">
+        <div class="stat-icon"><i class="fas fa-list"></i></div>
+        <div class="stat-info">
+            <span class="stat-value">{{ results.metadata.total_events|format_number }}</span>
+            <span class="stat-label">Events</span>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="dashboard-grid" id="dashboard-grid">
+    <div class="card chart-card" id="severity-chart-card">
+        <div class="card-header">
+            <h3><i class="fas fa-chart-pie"></i> Severity Breakdown</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="severity-chart"></canvas>
+        </div>
+    </div>
+
+    <div class="card chart-card" id="top-ips-card">
+        <div class="card-header">
+            <h3><i class="fas fa-network-wired"></i> Top IPs</h3>
+        </div>
+        <div class="card-body">
+            <div class="data-table" id="top-ips-table">
+                <table>
+                    <thead><tr><th>IP Address</th><th>Count</th></tr></thead>
+                    <tbody>
+                        {% for ip, count in results.top_ips[:10] %}
+                        <tr><td><code>{{ ip }}</code></td><td>{{ count }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card chart-card" id="top-findings-card">
+        <div class="card-header">
+            <h3><i class="fas fa-shield-halved"></i> Top Findings</h3>
+        </div>
+        <div class="card-body findings-list" id="top-findings-list">
+            {% for finding in results.findings[:8] %}
+            <div class="finding-item severity-{{ finding.severity|lower }}">
+                <span class="severity-badge {{ finding.severity|lower }}">{{ finding.severity|upper }}</span>
+                <span class="finding-title">{{ finding.title }}</span>
+                {% if finding.mitre %}<span class="mitre-tag">{{ finding.mitre }}</span>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Export Actions -->
+<div class="action-bar" id="export-bar">
+    <h3><i class="fas fa-download"></i> Export Report</h3>
+    <div class="action-buttons">
+        <button class="btn btn-outline" onclick="exportReport('json')" id="export-json-btn"><i class="fas fa-file-code"></i> JSON</button>
+        <button class="btn btn-outline" onclick="exportReport('csv')" id="export-csv-btn"><i class="fas fa-file-csv"></i> CSV</button>
+        <button class="btn btn-outline" onclick="exportReport('stix')" id="export-stix-btn"><i class="fas fa-file-shield"></i> STIX 2.1</button>
+        <button class="btn btn-outline" onclick="exportReport('pdf')" id="export-pdf-btn"><i class="fas fa-file-pdf"></i> PDF</button>
+        <button class="btn btn-outline" onclick="exportReport('docx')" id="export-docx-btn"><i class="fas fa-file-word"></i> DOCX</button>
+    </div>
+</div>
+{% else %}
+<!-- Empty State -->
+<div class="empty-state" id="empty-state">
+    <div class="empty-icon"><i class="fas fa-shield-halved"></i></div>
+    <h2>No Analysis Loaded</h2>
+    <p>Upload a log file to begin your investigation</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% if results %}
+// Severity chart
+const sevCtx = document.getElementById('severity-chart');
+if (sevCtx) {
+    new Chart(sevCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Critical', 'High', 'Medium', 'Low'],
+            datasets: [{
+                data: [{{ results.summary.critical }}, {{ results.summary.high }}, {{ results.summary.medium }}, {{ results.summary.low }}],
+                backgroundColor: ['#ff1744', '#ef4444', '#f59e0b', '#3b82f6'],
+                borderWidth: 0,
+                hoverOffset: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 16, font: { family: 'Inter' } } }
+            },
+            cutout: '65%',
+        }
+    });
+}
+{% endif %}
+</script>
+{% endblock %}

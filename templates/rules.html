@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Rules{% endblock %}
+{% block page_title %}Detection Rules{% endblock %}
+
+{% block content %}
+<div class="rules-container" id="rules-container">
+    <div class="card" id="sigma-sync-card">
+        <div class="card-header">
+            <h3><i class="fas fa-sync"></i> SigmaHQ Integration</h3>
+            <button class="btn btn-primary btn-sm" onclick="syncSigma()" id="sync-sigma-btn">
+                <i class="fas fa-download"></i> Sync from SigmaHQ
+            </button>
+        </div>
+        <div class="card-body">
+            <p>Sync 3000+ Sigma detection rules from the official SigmaHQ GitHub repository.</p>
+            <div id="sync-status"></div>
+        </div>
+    </div>
+
+    {% if stats %}
+    <div class="stats-grid stats-grid-small" id="rules-stats-grid">
+        <div class="stat-card"><div class="stat-info"><span class="stat-value text-accent">{{ stats.total_rules }}</span><span class="stat-label">Total Rules</span></div></div>
+        <div class="stat-card"><div class="stat-info"><span class="stat-value text-success">{{ stats.mitre_techniques_covered }}</span><span class="stat-label">MITRE Techniques</span></div></div>
+        <div class="stat-card"><div class="stat-info"><span class="stat-value">{{ stats.failed }}</span><span class="stat-label">Failed to Load</span></div></div>
+    </div>
+
+    <div class="card" id="rules-by-level-card">
+        <div class="card-header"><h3>Rules by Severity Level</h3></div>
+        <div class="card-body">
+            <div class="data-table"><table><thead><tr><th>Level</th><th>Count</th></tr></thead><tbody>
+                {% for level, count in stats.by_level.items() %}
+                <tr><td><span class="severity-badge {{ level }}">{{ level|upper }}</span></td><td>{{ count }}</td></tr>
+                {% endfor %}
+            </tbody></table></div>
+        </div>
+    </div>
+
+    <div class="card" id="rules-by-platform-card">
+        <div class="card-header"><h3>Rules by Platform</h3></div>
+        <div class="card-body">
+            <div class="data-table"><table><thead><tr><th>Platform</th><th>Count</th></tr></thead><tbody>
+                {% for platform, count in stats.by_platform.items() %}
+                <tr><td>{{ platform }}</td><td>{{ count }}</td></tr>
+                {% endfor %}
+            </tbody></table></div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function syncSigma() {
+    const btn = document.getElementById('sync-sigma-btn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+    const status = document.getElementById('sync-status');
+    status.innerHTML = '<p class="text-accent">Cloning SigmaHQ repository... This may take a few minutes.</p>';
+    try {
+        const resp = await fetch('/api/sigma-sync', {method: 'POST'});
+        const data = await resp.json();
+        if (data.error) { status.innerHTML = '<p class="text-danger">Error: ' + (data.errors?.join(', ') || data.error) + '</p>'; }
+        else { status.innerHTML = '<p class="text-success">✅ Synced ' + data.rules_total + ' rules (' + data.rules_added + ' new, ' + data.rules_updated + ' updated)</p>'; }
+    } catch(e) { status.innerHTML = '<p class="text-danger">Sync failed: ' + e.message + '</p>'; }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Sync from SigmaHQ'; }
+}
+</script>
+{% endblock %}

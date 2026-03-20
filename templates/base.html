@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ThreatScope V2{% endblock %} — DFIR Platform</title>
+    <meta name="description" content="ThreatScope V2 — Advanced DFIR & Threat Detection Platform by 0xSABRY">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span class="logo-icon">🛡️</span>
+                <div class="logo-text">
+                    <span class="logo-title">ThreatScope</span>
+                    <span class="logo-version">V{{ version }}</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}" id="nav-dashboard">
+                <i class="fas fa-gauge-high"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/analysis" class="nav-item {% if request.path == '/analysis' %}active{% endif %}" id="nav-analysis">
+                <i class="fas fa-magnifying-glass-chart"></i>
+                <span>Analysis</span>
+            </a>
+            <a href="/timeline" class="nav-item {% if request.path == '/timeline' %}active{% endif %}" id="nav-timeline">
+                <i class="fas fa-timeline"></i>
+                <span>Timeline</span>
+            </a>
+            <a href="/mitre" class="nav-item {% if request.path == '/mitre' %}active{% endif %}" id="nav-mitre">
+                <i class="fas fa-chess-board"></i>
+                <span>MITRE ATT&CK</span>
+            </a>
+            <a href="/intel" class="nav-item {% if request.path == '/intel' %}active{% endif %}" id="nav-intel">
+                <i class="fas fa-satellite-dish"></i>
+                <span>Threat Intel</span>
+            </a>
+            <a href="/copilot" class="nav-item {% if request.path == '/copilot' %}active{% endif %}" id="nav-copilot">
+                <i class="fas fa-robot"></i>
+                <span>AI Copilot</span>
+            </a>
+            <a href="/rules" class="nav-item {% if request.path == '/rules' %}active{% endif %}" id="nav-rules">
+                <i class="fas fa-shield-halved"></i>
+                <span>Rules</span>
+            </a>
+
+            <div class="nav-divider"></div>
+
+            <a href="/settings" class="nav-item {% if request.path == '/settings' %}active{% endif %}" id="nav-settings">
+                <i class="fas fa-gear"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <span class="footer-text">by <strong>0xSABRY</strong></span>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <button class="menu-toggle" onclick="toggleSidebar()" id="menu-toggle-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+            </div>
+            <div class="top-bar-right">
+                {% if results %}
+                <div class="threat-badge threat-{{ results.threat_level|lower }}" id="threat-badge">
+                    <span class="threat-score">{{ results.threat_score }}%</span>
+                    <span class="threat-label">{{ results.threat_level }}</span>
+                </div>
+                {% endif %}
+                <div class="status-indicator" id="status-indicator">
+                    <span class="status-dot"></span>
+                    <span>Ready</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p id="loading-text">Analyzing...</p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
