@@ -1,4 +1,4 @@
-# 🛡️ ThreatScope — Advanced Log Intelligence & Threat Detection Engine
+# 🛡️ ThreatScope X — Advanced Log Intelligence & Threat Detection Engine
 
 <div align="center">
 
