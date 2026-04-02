@@ -1,12 +1,12 @@
-# 🛡️ ThreatScope X — Advanced Log Intelligence & Threat Detection Engine
+# ⚡ ThreatscopeX — Advanced Log Intelligence & Threat Detection Engine
 
 <div align="center">
 
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue?style=for-the-badge&logo=python)
-![Version](https://img.shields.io/badge/Version-3.0.0-brightgreen?style=for-the-badge)
-![Rules](https://img.shields.io/badge/Detection%20Rules-115%2B-red?style=for-the-badge)
-![MITRE](https://img.shields.io/badge/MITRE%20ATT%26CK-97%20Techniques-orange?style=for-the-badge)
-![Categories](https://img.shields.io/badge/Attack%20Categories-25-purple?style=for-the-badge)
+![Rules](https://img.shields.io/badge/Detection%20Rules-308-red?style=for-the-badge)
+![MITRE](https://img.shields.io/badge/MITRE%20ATT%26CK-274%20Techniques-orange?style=for-the-badge)
+![Correlations](https://img.shields.io/badge/Correlation%20Rules-35-purple?style=for-the-badge)
+![Categories](https://img.shields.io/badge/Attack%20Categories-24-darkblue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge)
 ![STIX](https://img.shields.io/badge/STIX%202.1-IOC%20Export-cyan?style=for-the-badge)
 ![Sigma](https://img.shields.io/badge/Sigma-Rule%20Support-yellow?style=for-the-badge)
@@ -19,77 +19,61 @@
 
 ## Overview
 
-**ThreatScope** is a standalone, zero-dependency Windows log analysis and threat detection tool built in Python. It ingests `.log`, `.txt`, and `.evtx` (Windows Event Log) files and applies **115+ regex-powered detection rules** to surface threats, correlate multi-stage attack chains, extract IOCs, and map findings to MITRE ATT&CK techniques — all from a sleek dark-themed GUI or the command line.
+**ThreatscopeX** is a high-performance, enterprise-grade log analysis and threat detection engine built in Python. It ingests `.log`, `.txt`, `.evtx`, `.csv`, and `.json` files and applies **308 regex-powered detection rules** across **24 attack categories** to detect threats, correlate multi-stage attack chains, extract IOCs, and map findings to **274 MITRE ATT&CK techniques** — all from a premium dark-themed GUI or the command line.
 
 > 🎯 Designed for SOC analysts, threat hunters, IR teams, and blue teamers who need rapid, offline log triage without spinning up a full SIEM.
 
 ---
 
-## ⭐ What's New in v3.0.0
-
-| Feature                     | Description                                                                    |
-| --------------------------- | ------------------------------------------------------------------------------ |
-| 🖥️ **CLI Mode**             | Full command-line analysis with `--file`, `--json`, `--report`, `--stix` flags |
-| 🔐 **30+ New Rules**        | API Security, AI/ML Attacks, Blockchain, Network, Zero Trust categories        |
-| 🔗 **STIX 2.1 Export**      | Export IOCs as STIX bundles for threat intel platform sharing                  |
-| 📐 **Sigma Rule Support**   | Load custom YAML detection rules from `sigma_rules/` directory                 |
-| 🔒 **File Integrity**       | Auto MD5/SHA256 hash of analyzed log files in reports                          |
-| ⚡ **15 Correlation Rules** | 5 new attack chain detections (API, AI, MFA, Crypto, MitM)                     |
-| 📊 **97 MITRE Techniques**  | Expanded technique mapping with new tactic coverage                            |
-
----
-
 ## Features
 
-| Feature                   | Details                                                           |
-| ------------------------- | ----------------------------------------------------------------- |
-| 🔍 **Detection Engine**   | 115+ rules, 300+ regex patterns, 25 attack categories             |
-| 🎯 **MITRE ATT&CK**       | Full technique mapping (97 techniques tracked)                    |
-| ⚡ **Correlation Engine** | 15 multi-signal attack chain rules                                |
-| 🔎 **IOC Extraction**     | MD5/SHA1/SHA256, IPs, URLs, domains, emails, CVEs                 |
-| 📄 **File Support**       | `.log`, `.txt`, `.evtx` (native + python-evtx)                    |
-| 💾 **JSON Export**        | Full structured report with IOCs, MITRE, correlations             |
-| 🔗 **STIX 2.1 Export**    | Standard IOC bundle for threat intel platforms                    |
-| 📐 **Sigma Rules**        | Import YAML-based detection rules                                 |
-| 🖥️ **7-Tab GUI**          | Report, Findings, IP/Users, Timeline, MITRE ATT&CK, IOCs, Raw Log |
-| ⌨️ **CLI Mode**           | Headless analysis for automation and scripting                    |
-| 📊 **Threat Score**       | 0–100% weighted severity score with correlation bonuses           |
-| 🔒 **File Integrity**     | MD5/SHA256 hash verification for analyzed files                   |
-| ⚙️ **Zero Setup**         | Pure Python stdlib only (tkinter, re, json, struct)               |
+| Feature                    | Details                                                              |
+| -------------------------- | -------------------------------------------------------------------- |
+| 🔍 **Detection Engine**    | 308 rules, 900+ regex patterns, 24 attack categories                |
+| 🎯 **MITRE ATT&CK**       | Full technique mapping (274 techniques across all 14 tactics)        |
+| ⚡ **Correlation Engine**  | 35 multi-signal attack chain detection rules                        |
+| 🔎 **IOC Extraction**      | MD5/SHA1/SHA256, IPv4/IPv6, URLs, domains, emails, CVEs, Bitcoin, MAC, registry keys, file paths, user-agents |
+| 📄 **File Support**        | `.log`, `.txt`, `.evtx` (native + python-evtx), `.csv`, `.json`     |
+| 💾 **JSON Export**          | Full structured report with IOCs, MITRE, correlations                |
+| 🔗 **STIX 2.1 Export**     | Standard IOC bundle for threat intel platforms                       |
+| 📐 **Sigma Rules**         | Import YAML-based detection rules                                    |
+| 🖥️ **8-Tab Premium GUI**   | Report, Findings, IP/Users, Timeline, MITRE ATT&CK, IOCs, Rule Browser, Raw Log |
+| 📚 **Rule Browser**        | Search, filter, and browse all 308 rules by category/severity        |
+| ⌨️ **CLI Mode**            | Headless analysis for automation and scripting                       |
+| 📊 **Threat Score**        | 0–100% weighted severity score with correlation bonuses              |
+| 🔒 **File Integrity**      | MD5/SHA256 hash verification for analyzed files                      |
+| ⚙️ **Zero Setup**          | Pure Python stdlib only (tkinter, re, json, struct)                  |
 
 ---
 
-## Attack Categories (25)
+## Attack Categories (24)
 
-| #   | Category                 | Rules | Key Threats                                                    |
-| --- | ------------------------ | ----- | -------------------------------------------------------------- |
-| 1   | Authentication           | 10    | Failed logins, brute-force, password spray, account creation   |
-| 2   | Privilege Escalation     | 7     | UAC bypass, token theft, SeImpersonate, DLL hijacking          |
-| 3   | Persistence              | 8     | Scheduled tasks, WMI subscriptions, COM hijack, BITS jobs      |
-| 4   | Lateral Movement         | 8     | PsExec, Pass-the-Hash, SMB, WMI, DCOM, SSH                     |
-| 5   | Command & Control        | 9     | Cobalt Strike, DNS tunneling, ICMP tunnel, domain fronting     |
-| 6   | Exfiltration             | 6     | DNS exfil, cloud storage, steganography, clipboard             |
-| 7   | Defense Evasion          | 10    | Log clearing, AMSI bypass, ETW bypass, ADS, obfuscation        |
-| 8   | Discovery                | 7     | AD recon, network scan, BloodHound, security SW discovery      |
-| 9   | Credential Access        | 5     | LSASS dump, DCSync, SAM dump, NTDS.dit, Mimikatz               |
-| 10  | Web Attack               | 11    | SQLi, XSS, XXE, SSRF, RFI, deserialization, HTTP smuggling     |
-| 11  | Malware                  | 8     | Ransomware, fileless malware, webshell, macros, droppers       |
-| 12  | Auth Protocol Attack     | 3     | Kerberoasting, Golden/Silver Ticket, NTLM downgrade            |
-| 13  | Cloud Attack             | 2     | Metadata service abuse, container escape                       |
-| 14  | Supply Chain             | 3     | Dependency confusion, typosquatting, CI/CD compromise          |
-| 15  | IoT/OT Attack            | 3     | SCADA/ICS, Modbus exploit, MQTT anomaly                        |
-| 16  | Insider Threat           | 4     | Mass file access, off-hours, bulk download, USB exfil          |
-| 17  | Zero-Day/Exploit         | 4     | Exploit kits, shellcode, heap spray, ROP chain                 |
-| 18  | Email/Phishing           | 4     | Phishing URLs, macro docs, spoofed sender, credential harvest  |
-| 19  | Cryptomining             | 3     | Mining pools, Stratum protocol, XMRig detection                |
-| 20  | **API Security** ⭐      | 7     | JWT abuse, GraphQL injection, BOLA/IDOR, OAuth theft           |
-| 21  | **AI/ML Attack** ⭐      | 4     | Prompt injection, model poisoning, adversarial input           |
-| 22  | **Blockchain Attack** ⭐ | 4     | Smart contract exploit, wallet theft, rug pull, crypto clipper |
-| 23  | **Network Attack** ⭐    | 6     | ARP poisoning, DNS rebinding, BGP hijack, SSL stripping        |
-| 24  | **Zero Trust Bypass** ⭐ | 6     | MFA fatigue, SAML forgery, Kerberos delegation abuse           |
-| 25  | **Sigma Rule** ⭐        | ∞     | Custom YAML-based detection rules                              |
-
-> ⭐ New in v3.0.0
+| #   | Category              | Rules | Key Threats                                                    |
+| --- | --------------------- | ----- | -------------------------------------------------------------- |
+| 1   | Authentication        | 30    | Failed logins, brute-force, password spray, SID history, SPN   |
+| 2   | Privilege Escalation  | 21    | UAC bypass, token theft, Potato exploits, Zerologon, PwnKit    |
+| 3   | Persistence           | 31    | Registry run keys, WMI, COM hijack, BITS, kernel modules       |
+| 4   | Lateral Movement      | 20    | PsExec, Pass-the-Hash/Ticket, RDP hijack, CrackMapExec        |
+| 5   | C2                    | 24    | Cobalt Strike, DNS tunneling, domain fronting, Mythic, Sliver  |
+| 6   | Exfiltration          | 15    | DNS exfil, cloud storage, USB, steganography, keylogger        |
+| 7   | Defense Evasion       | 30    | AMSI/ETW bypass, process injection, rootkit, NTDLL unhooking   |
+| 8   | Discovery             | 20    | AD recon, BloodHound, cloud enum, SNMP/LDAP enum               |
+| 9   | Credential Access     | 20    | LSASS dump, DCSync, Kerberoasting, AS-REP roast, DPAPI         |
+| 10  | Web Attack            | 20    | SQLi, XSS, SSRF, Log4Shell, Spring4Shell, deserialization      |
+| 11  | Malware               | 21    | Ransomware (LockBit/BlackCat), RATs, APT tools, Mimikatz       |
+| 12  | Cloud Attack          | 2     | Metadata service abuse, container escape                       |
+| 13  | Supply Chain          | 3     | Dependency confusion, typosquatting, CI/CD compromise          |
+| 14  | IoT/OT Attack         | 3     | SCADA/ICS, Modbus exploit, MQTT anomaly                        |
+| 15  | Insider Threat        | 3     | Mass file access, off-hours, bulk download                     |
+| 16  | Zero-Day/Exploit      | 4     | Exploit kits, shellcode, heap spray, ROP chain                 |
+| 17  | Email/Phishing        | 4     | Phishing URLs, macro docs, spoofed sender, credential harvest  |
+| 18  | Cryptomining          | 3     | Mining pools, Stratum protocol, XMRig detection                |
+| 19  | API Security          | 7     | JWT abuse, GraphQL injection, BOLA/IDOR, OAuth theft           |
+| 20  | AI/ML Attack          | 4     | Prompt injection, model poisoning, adversarial input           |
+| 21  | Blockchain Attack     | 4     | Smart contract exploit, wallet theft, rug pull, crypto clipper |
+| 22  | Network Attack        | 6     | ARP poisoning, DNS rebinding, BGP hijack, SSL stripping        |
+| 23  | Zero Trust Bypass     | 6     | MFA fatigue, SAML forgery, Kerberos delegation abuse           |
+| 24  | Execution             | 10    | PowerShell, WMI, certutil, BITSAdmin, Office child process     |
 
 ---
 
@@ -101,7 +85,7 @@ git clone https://github.com/0xsabry/ThreatScope.git
 cd ThreatScope
 
 # Run (Python 3.8+ required, no pip installs needed)
-python 0xSABRY_ThreatScope.py
+python ThreatscopeX.py
 
 # Optional: install enhanced dependencies
 pip install -r requirements.txt
@@ -114,28 +98,28 @@ pip install -r requirements.txt
 ### GUI Mode (Default)
 
 ```bash
-python 0xSABRY_ThreatScope.py
+python ThreatscopeX.py
 ```
 
-1. **Load Log** — Click `📂 Load Log` and select a `.log`, `.txt`, or `.evtx` file
-2. **Analyze** — Click `🔍 Analyze` — analysis runs in a background thread
-3. **Review** — Navigate tabs to explore findings, timeline, MITRE coverage, and IOCs
+1. **Load Log** — Click `📂 Load Log File` and select a `.log`, `.txt`, `.evtx`, `.csv`, or `.json` file
+2. **Analyze** — Click `⚡ Analyze` — analysis runs in a background thread
+3. **Review** — Navigate 8 tabs: Report, Findings, IP/Users, Timeline, MITRE ATT&CK, IOCs, Rule Browser, Raw Log
 4. **Export** — Click `💾 Export JSON` or `🔗 Export STIX` for machine-readable reports
 
 ### CLI Mode (Headless)
 
 ```bash
 # Analyze and print text report
-python 0xSABRY_ThreatScope.py -f server.log --report
+python ThreatscopeX.py -f server.log --report
 
 # Analyze and export JSON report
-python 0xSABRY_ThreatScope.py -f data.evtx -j report.json
+python ThreatscopeX.py -f data.evtx -j report.json
 
 # Export IOCs as STIX 2.1 bundle
-python 0xSABRY_ThreatScope.py -f log.txt --stix iocs.json
+python ThreatscopeX.py -f log.txt --stix iocs.json
 
 # Full analysis with all exports
-python 0xSABRY_ThreatScope.py -f access.log -r -j report.json --stix iocs.json
+python ThreatscopeX.py -f access.log -r -j report.json --stix iocs.json
 ```
 
 | Flag             | Description                         |
@@ -174,8 +158,8 @@ pip install pyyaml
 ## Project Structure
 
 ```
-ThreatScope/
-├── 0xSABRY_ThreatScope.py      # Main application (GUI + CLI + Engine)
+ThreatScopeX/
+├── ThreatscopeX.py              # Main application (GUI + CLI + Engine)
 ├── requirements.txt             # Optional dependencies
 ├── sigma_rules/                 # Custom Sigma detection rules (YAML)
 │   └── example_powershell.yml   # Example Sigma rule
@@ -189,7 +173,7 @@ ThreatScope/
 
 ---
 
-## Correlation Engine (15 Rules)
+## Correlation Engine (35 Rules)
 
 | Chain Name                    | Signals Required                                          | Boost |
 | ----------------------------- | --------------------------------------------------------- | ----- |
@@ -197,17 +181,23 @@ ThreatScope/
 | Full Kill Chain Detected      | credential_dumping + lateral_movement + data_exfiltration | +30   |
 | Ransomware Deployment Chain   | lateral_movement + av_tamper + ransomware                 | +25   |
 | Active C2 with Exfiltration   | command_and_control + data_exfiltration                   | +20   |
-| Persistence + Defense Evasion | persistence + log_tampering                               | +15   |
 | AD Compromise Chain           | ad_recon + kerberoasting + golden_silver_ticket           | +30   |
-| Phishing to Credential Dump   | phishing_url + credential_dumping                         | +20   |
-| Web Attack to Shell           | sql_injection + reverse_shell                             | +20   |
-| Supply Chain + Persistence    | dependency_confusion + persistence                        | +20   |
-| Insider Threat Indicators     | off_hours_access + bulk_download                          | +15   |
-| **API Attack Chain** ⭐       | jwt_abuse + broken_auth_api                               | +20   |
-| **AI System Compromise** ⭐   | prompt_injection + data_extraction_llm                    | +25   |
-| **MFA Bypass + Lateral** ⭐   | mfa_fatigue + lateral_movement                            | +25   |
-| **Crypto Theft Chain** ⭐     | wallet_theft + crypto_clipper                             | +25   |
-| **Network MitM + Creds** ⭐   | arp_poisoning + credential_dumping                        | +20   |
+| DCSync + Golden Ticket        | dcsync_attack + golden_silver_ticket                      | +30   |
+| Ransomware Kill Chain         | credential_dumping + lateral_movement + ransomware        | +30   |
+| ICS Attack Chain              | scada_ics_abuse + modbus_exploit                          | +30   |
+| Zero-Day Exploitation         | shellcode_detect + process_injection                      | +28   |
+| SAML Forgery + Cloud Access   | saml_attack + cloud_metadata_abuse                        | +28   |
+| Rootkit + Timestomping        | rootkit_detect + timestomp                                | +28   |
+| AI System Compromise          | prompt_injection + data_extraction_llm                    | +25   |
+| MFA Bypass + Lateral          | mfa_fatigue + lateral_movement                            | +25   |
+| Crypto Theft Chain            | wallet_theft + crypto_clipper                             | +25   |
+| Container Escape + Persistence| container_escape + persistence                            | +25   |
+| Log4Shell Exploitation        | log4j_exploit + reverse_shell                             | +25   |
+| PrintNightmare Chain          | lpe_printspooler + lateral_movement                       | +25   |
+| Trojan + C2 Beacon            | trojan_rat + beacon_pattern                               | +25   |
+| AS-REP + Pass-the-Ticket      | as_rep_roasting + pass_the_ticket                         | +25   |
+| LOLBins Attack Chain          | fileless_malware + amsi_bypass                            | +20   |
+| ... and 15 more               |                                                           |       |
 
 ---
 
@@ -231,7 +221,7 @@ MIT License — see [LICENSE](LICENSE)
 
 <div align="center">
 
-Made with ❤️ by <a href="https://github.com/0xsabry">0xSABRY</a> — SOC Analyst & Security Researcher
+Built with ❤️ by <a href="https://github.com/0xsabry">0xSABRY</a> — SOC Analyst & Security Researcher
 
 [![LinkedIn](https://img.shields.io/badge/Connect_on_LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/mohamed-sabry-hamdan/)
 [![GitHub](https://img.shields.io/badge/Follow_on_GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/0xsabry)
