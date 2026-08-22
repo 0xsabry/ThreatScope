@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Threat Intel{% endblock %}
+{% block page_title %}Threat Intelligence{% endblock %}
+
+{% block content %}
+<div class="intel-container" id="intel-container">
+    <!-- Enrichment Controls -->
+    <div class="card" id="enrichment-card">
+        <div class="card-header">
+            <h3><i class="fas fa-satellite-dish"></i> IOC Enrichment</h3>
+            <button class="btn btn-primary btn-sm" onclick="enrichIOCs()" id="enrich-btn">
+                <i class="fas fa-bolt"></i> Enrich All IOCs
+            </button>
+        </div>
+        <div class="card-body" id="enrichment-results">
+            <p class="text-muted">Click "Enrich All IOCs" to query VirusTotal, AbuseIPDB, and AlienVault OTX for threat intelligence on all extracted IOCs.</p>
+        </div>
+    </div>
+
+    <!-- APT Attribution -->
+    <div class="card" id="apt-card">
+        <div class="card-header">
+            <h3><i class="fas fa-user-secret"></i> APT Group Attribution</h3>
+            <button class="btn btn-outline btn-sm" onclick="runAPTMapping()" id="apt-btn">
+                <i class="fas fa-crosshairs"></i> Map APT Groups
+            </button>
+        </div>
+        <div class="card-body" id="apt-results">
+            <p class="text-muted">Map detected MITRE techniques to known APT group profiles for threat attribution.</p>
+        </div>
+    </div>
+
+    <!-- IOC Table -->
+    {% if results and results.iocs %}
+    <div class="card" id="ioc-table-card">
+        <div class="card-header"><h3><i class="fas fa-fingerprint"></i> Extracted IOCs</h3></div>
+        <div class="card-body">
+            <div class="data-table">
+                <table>
+                    <thead><tr><th>Type</th><th>Count</th></tr></thead>
+                    <tbody>
+                        {% for ioc_type, count in results.iocs.by_type.items() %}
+                        <tr><td>{{ ioc_type }}</td><td>{{ count }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function enrichIOCs() {
+    const btn = document.getElementById('enrich-btn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enriching...';
+    try {
+        const resp = await fetch('/api/enrich', {method: 'POST'});
+        const data = await resp.json();
+        const container = document.getElementById('enrichment-results');
+        if (data.error) { container.innerHTML = '<p class="text-danger">' + data.error + '</p>'; return; }
+        let html = '<div class="enrichment-summary">';
+        html += '<p>Enriched <strong>' + data.summary.total_enriched + '</strong> IOCs</p>';
+        if (data.summary.malicious_count > 0) html += '<p class="text-critical">🔴 ' + data.summary.malicious_count + ' Malicious</p>';
+        if (data.summary.suspicious_count > 0) html += '<p class="text-warning">🟡 ' + data.summary.suspicious_count + ' Suspicious</p>';
+        html += '</div><div class="enrichment-details">';
+        for (const [ioc, result] of Object.entries(data.enrichment || {})) {
+            const cls = result.verdict === 'malicious' ? 'text-critical' : result.verdict === 'suspicious' ? 'text-warning' : 'text-success';
+            html += '<div class="enrichment-item"><code>' + ioc + '</code> — <span class="' + cls + '">' + result.verdict + '</span> (Score: ' + result.risk_score + ')</div>';
+        }
+        html += '</div>';
+        container.innerHTML = html;
+    } catch(e) { showToast('Enrichment failed: ' + e.message, 'error'); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> Enrich All IOCs'; }
+}
+
+async function runAPTMapping() {
+    const btn = document.getElementById('apt-btn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mapping...';
+    try {
+        const resp = await fetch('/api/apt-map', {method: 'POST'});
+        const data = await resp.json();
+        const container = document.getElementById('apt-results');
+        if (!data.matches?.length) { container.innerHTML = '<p class="text-muted">No APT group matches found.</p>'; return; }
+        let html = '<div class="apt-matches">';
+        data.matches.forEach(m => {
+            html += '<div class="apt-match-card"><div class="apt-header"><span class="apt-name">' + m.group + '</span>';
+            html += '<span class="apt-confidence">' + m.confidence + '% confidence</span>';
+            html += '<span class="apt-country"><i class="fas fa-globe"></i> ' + m.country + '</span></div>';
+            html += '<p class="apt-desc">' + m.description + '</p>';
+            html += '<p class="apt-aliases">Aliases: ' + m.aliases.join(', ') + '</p>';
+            html += '<p class="apt-techniques">Matched: ' + m.matched_count + ' techniques</p></div>';
+        });
+        container.innerHTML = html + '</div>';
+    } catch(e) { showToast('APT mapping failed: ' + e.message, 'error'); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-crosshairs"></i> Map APT Groups'; }
+}
+</script>
+{% endblock %}

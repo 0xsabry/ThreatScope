@@ -1,239 +1,508 @@
-# 🛡️ ThreatScope — Advanced Log Intelligence & Threat Detection Engine
+<p align="center">
+  <img src="https://img.shields.io/badge/ThreatScope-V3.5-00d4ff?style=for-the-badge&logo=shield&logoColor=white" alt="ThreatScope V3.5"/>
+</p>
 
-<div align="center">
+<h1 align="center">🛡️ ThreatScope V3.5</h1>
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue?style=for-the-badge&logo=python)
-![Version](https://img.shields.io/badge/Version-3.0.0-brightgreen?style=for-the-badge)
-![Rules](https://img.shields.io/badge/Detection%20Rules-115%2B-red?style=for-the-badge)
-![MITRE](https://img.shields.io/badge/MITRE%20ATT%26CK-97%20Techniques-orange?style=for-the-badge)
-![Categories](https://img.shields.io/badge/Attack%20Categories-25-purple?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge)
-![STIX](https://img.shields.io/badge/STIX%202.1-IOC%20Export-cyan?style=for-the-badge)
-![Sigma](https://img.shields.io/badge/Sigma-Rule%20Support-yellow?style=for-the-badge)
+<p align="center">
+  <strong>Advanced DFIR & Threat Detection Platform</strong><br>
+  <em>Open-source forensic analysis tool that eats Chainsaw for breakfast.</em>
+</p>
 
-**Built by [0xSABRY](https://github.com/0xsabry) — SOC Analyst & Threat Hunter**
-
-</div>
-
----
-
-## Overview
-
-**ThreatScope** is a standalone, zero-dependency Windows log analysis and threat detection tool built in Python. It ingests `.log`, `.txt`, and `.evtx` (Windows Event Log) files and applies **115+ regex-powered detection rules** to surface threats, correlate multi-stage attack chains, extract IOCs, and map findings to MITRE ATT&CK techniques — all from a sleek dark-themed GUI or the command line.
-
-> 🎯 Designed for SOC analysts, threat hunters, IR teams, and blue teamers who need rapid, offline log triage without spinning up a full SIEM.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.8+"/>
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License"/>
+  <img src="https://img.shields.io/badge/SigmaHQ-3000%2B%20Rules-blue?style=flat-square" alt="Sigma Rules"/>
+  <img src="https://img.shields.io/badge/MITRE%20ATT%26CK-100%2B%20Techniques-red?style=flat-square" alt="MITRE ATT&CK"/>
+  <img src="https://img.shields.io/badge/Detection%20Rules-55%2B%20Categories-purple?style=flat-square" alt="Detection Rules"/>
+  <img src="https://img.shields.io/badge/Enterprise%20Modules-6%20New-ff8c00?style=flat-square" alt="Enterprise Modules"/>
+  <img src="https://img.shields.io/badge/Author-0xSABRY-ff1744?style=flat-square" alt="Author"/>
+</p>
 
 ---
 
-## ⭐ What's New in v3.0.0
+## 🚀 What is ThreatScope V3.5?
 
-| Feature                     | Description                                                                    |
-| --------------------------- | ------------------------------------------------------------------------------ |
-| 🖥️ **CLI Mode**             | Full command-line analysis with `--file`, `--json`, `--report`, `--stix` flags |
-| 🔐 **30+ New Rules**        | API Security, AI/ML Attacks, Blockchain, Network, Zero Trust categories        |
-| 🔗 **STIX 2.1 Export**      | Export IOCs as STIX bundles for threat intel platform sharing                  |
-| 📐 **Sigma Rule Support**   | Load custom YAML detection rules from `sigma_rules/` directory                 |
-| 🔒 **File Integrity**       | Auto MD5/SHA256 hash of analyzed log files in reports                          |
-| ⚡ **15 Correlation Rules** | 5 new attack chain detections (API, AI, MFA, Crypto, MitM)                     |
-| 📊 **97 MITRE Techniques**  | Expanded technique mapping with new tactic coverage                            |
+ThreatScope V3.5 is a **world-class DFIR and threat detection platform** designed for SOC analysts, incident responders, and threat hunters. It combines the power of Sigma rules, behavioral chain detection, AI-powered analysis, and multi-platform log parsing into one unified tool — now with **6 enterprise-grade modules** for advanced investigations: causal graph analysis, deep forensic artifact parsing, hypothesis-driven AI investigation, auto-deobfuscation, dynamic rule generation, and purple team MITRE verification.
 
----
+### 🆕 What's New in V3.5 — Enterprise Modules
 
-## Features
+- 🔀 **Causal Graph & Process Lineage** — Builds directional process graphs from Sysmon/Security/auditd logs with automated Root Cause Analysis (RCA) backtracking and D3.js/Cytoscape.js export
+- 🧩 **Deep Forensics Artifact Parsers** — Prefetch, $MFT, Shimcache, and Amcache parsers for Windows DFIR deep-dives with timestomping detection
+- 🤖 **Hypothesis-Driven AI Copilot** — Autonomous investigation agent that generates, scores, and refines hypotheses with graded evidence collection
+- 🔓 **Auto-Deobfuscation Engine** — Multi-layer recursive deobfuscation for PowerShell, Bash, and generic payloads with embedded C2 indicator extraction
+- 📝 **Dynamic Rule Generator** — Auto-generates valid Sigma YAML and YARA signatures from deobfuscated payloads and behavioral patterns
+- 🟣 **Purple Team MITRE Verifier** — Validates detection coverage against Atomic Red Team tests, builds ATT&CK Navigator layers, and identifies detection gaps
 
-| Feature                   | Details                                                           |
-| ------------------------- | ----------------------------------------------------------------- |
-| 🔍 **Detection Engine**   | 115+ rules, 300+ regex patterns, 25 attack categories             |
-| 🎯 **MITRE ATT&CK**       | Full technique mapping (97 techniques tracked)                    |
-| ⚡ **Correlation Engine** | 15 multi-signal attack chain rules                                |
-| 🔎 **IOC Extraction**     | MD5/SHA1/SHA256, IPs, URLs, domains, emails, CVEs                 |
-| 📄 **File Support**       | `.log`, `.txt`, `.evtx` (native + python-evtx)                    |
-| 💾 **JSON Export**        | Full structured report with IOCs, MITRE, correlations             |
-| 🔗 **STIX 2.1 Export**    | Standard IOC bundle for threat intel platforms                    |
-| 📐 **Sigma Rules**        | Import YAML-based detection rules                                 |
-| 🖥️ **7-Tab GUI**          | Report, Findings, IP/Users, Timeline, MITRE ATT&CK, IOCs, Raw Log |
-| ⌨️ **CLI Mode**           | Headless analysis for automation and scripting                    |
-| 📊 **Threat Score**       | 0–100% weighted severity score with correlation bonuses           |
-| 🔒 **File Integrity**     | MD5/SHA256 hash verification for analyzed files                   |
-| ⚙️ **Zero Setup**         | Pure Python stdlib only (tkinter, re, json, struct)               |
+### What's in V3
 
----
+- 🐧 **Full Linux Log Support** — Dedicated parsers for syslog, auth.log, journald, Apache/Nginx, and firewall logs
+- 📡 **Live Log Monitoring** — Real-time WebSocket-based streaming with instant detection
+- 🛡️ **20+ Built-in YARA Rules** — Malware signatures, webshells, exploit tools, suspicious documents, Linux threats
+- 🎯 **100+ MITRE ATT&CK Techniques** — Full coverage across all 14 tactics with sub-technique resolution
+- ⚔️ **55+ Detection Categories** — 30 new patterns including cloud attacks, cryptojacking, fileless malware, and more
+- 🔐 **Security Hardened** — CSP headers, rate limiting, CSRF protection, input validation, audit logging
+- 🕵️ **20 APT Groups** — 10 new groups including Volt Typhoon, Scattered Spider, LockBit, ALPHV/BlackCat
+- 🔗 **30 Correlation Rules** — 10 new rules for Linux, cloud, and advanced attack chains
+- ⛓️ **15 Behavioral Chains** — 5 new multi-stage patterns for Linux and cloud attack sequences
 
-## Attack Categories (25)
+### Why ThreatScope?
 
-| #   | Category                 | Rules | Key Threats                                                    |
-| --- | ------------------------ | ----- | -------------------------------------------------------------- |
-| 1   | Authentication           | 10    | Failed logins, brute-force, password spray, account creation   |
-| 2   | Privilege Escalation     | 7     | UAC bypass, token theft, SeImpersonate, DLL hijacking          |
-| 3   | Persistence              | 8     | Scheduled tasks, WMI subscriptions, COM hijack, BITS jobs      |
-| 4   | Lateral Movement         | 8     | PsExec, Pass-the-Hash, SMB, WMI, DCOM, SSH                     |
-| 5   | Command & Control        | 9     | Cobalt Strike, DNS tunneling, ICMP tunnel, domain fronting     |
-| 6   | Exfiltration             | 6     | DNS exfil, cloud storage, steganography, clipboard             |
-| 7   | Defense Evasion          | 10    | Log clearing, AMSI bypass, ETW bypass, ADS, obfuscation        |
-| 8   | Discovery                | 7     | AD recon, network scan, BloodHound, security SW discovery      |
-| 9   | Credential Access        | 5     | LSASS dump, DCSync, SAM dump, NTDS.dit, Mimikatz               |
-| 10  | Web Attack               | 11    | SQLi, XSS, XXE, SSRF, RFI, deserialization, HTTP smuggling     |
-| 11  | Malware                  | 8     | Ransomware, fileless malware, webshell, macros, droppers       |
-| 12  | Auth Protocol Attack     | 3     | Kerberoasting, Golden/Silver Ticket, NTLM downgrade            |
-| 13  | Cloud Attack             | 2     | Metadata service abuse, container escape                       |
-| 14  | Supply Chain             | 3     | Dependency confusion, typosquatting, CI/CD compromise          |
-| 15  | IoT/OT Attack            | 3     | SCADA/ICS, Modbus exploit, MQTT anomaly                        |
-| 16  | Insider Threat           | 4     | Mass file access, off-hours, bulk download, USB exfil          |
-| 17  | Zero-Day/Exploit         | 4     | Exploit kits, shellcode, heap spray, ROP chain                 |
-| 18  | Email/Phishing           | 4     | Phishing URLs, macro docs, spoofed sender, credential harvest  |
-| 19  | Cryptomining             | 3     | Mining pools, Stratum protocol, XMRig detection                |
-| 20  | **API Security** ⭐      | 7     | JWT abuse, GraphQL injection, BOLA/IDOR, OAuth theft           |
-| 21  | **AI/ML Attack** ⭐      | 4     | Prompt injection, model poisoning, adversarial input           |
-| 22  | **Blockchain Attack** ⭐ | 4     | Smart contract exploit, wallet theft, rug pull, crypto clipper |
-| 23  | **Network Attack** ⭐    | 6     | ARP poisoning, DNS rebinding, BGP hijack, SSL stripping        |
-| 24  | **Zero Trust Bypass** ⭐ | 6     | MFA fatigue, SAML forgery, Kerberos delegation abuse           |
-| 25  | **Sigma Rule** ⭐        | ∞     | Custom YAML-based detection rules                              |
-
-> ⭐ New in v3.0.0
+| Feature | ThreatScope V3.5 | Chainsaw | Others |
+|---------|:-:|:-:|:-:|
+| SigmaHQ Full Integration (3000+ Rules) | ✅ | ✅ | ❌ |
+| YARA Rules Engine (20+ Built-in) | ✅ | ✅ | ❌ |
+| Behavioral Chain Detection (15 Chains) | ✅ | ❌ | ❌ |
+| Multi-Platform (Win/Linux/Mac/Cloud) | ✅ | ❌ | ❌ |
+| Full Linux Log Parsing (5 Parsers) | ✅ | ❌ | ❌ |
+| Live Log Monitoring (WebSocket) | ✅ | ❌ | ❌ |
+| Causal Process Graph & RCA | ✅ | ❌ | ❌ |
+| Deep Forensics (Prefetch/MFT/Shimcache/Amcache) | ✅ | ❌ | ❌ |
+| Hypothesis-Driven AI Investigation | ✅ | ❌ | ❌ |
+| Auto-Deobfuscation (PS/Bash/Generic) | ✅ | ❌ | ❌ |
+| Dynamic Sigma & YARA Rule Generation | ✅ | ❌ | ❌ |
+| Purple Team MITRE Verification | ✅ | ❌ | ❌ |
+| AI Copilot & Narrative Engine | ✅ | ❌ | ❌ |
+| APT Group Attribution (20 Groups) | ✅ | ❌ | ❌ |
+| Threat Intel Enrichment (VT/AbuseIPDB/OTX) | ✅ | ❌ | ❌ |
+| Modern Web Dashboard | ✅ | ❌ | ❌ |
+| 100+ MITRE ATT&CK Techniques | ✅ | ❌ | ❌ |
+| Security Hardened (CSP/Rate Limiting/Audit) | ✅ | ❌ | ❌ |
+| False Positive Suppression | ✅ | ❌ | ❌ |
+| Training Mode for Analysts | ✅ | ❌ | ❌ |
+| Multi-Format Export (JSON/CSV/STIX/PDF/DOCX) | ✅ | ❌ | ❌ |
 
 ---
 
-## Installation
+## ✨ Key Features
+
+### 🔀 Causal Graph & Process Lineage (V3.5 NEW)
+- **Process Tree Construction** — Builds PPID→PID→Child graphs from Sysmon EventID 1, Security 4688, and auditd
+- **Root Cause Analysis** — Automated backtracking to identify initial compromise process
+- **Network Overlay** — Maps network connections (Sysmon 3) to process nodes
+- **File Modification Tracking** — Links file operations (Sysmon 11/15) to responsible processes
+- **Multi-Format Export** — D3.js force-directed, Cytoscape.js, GraphML, DOT, and JSON
+- **Anomaly Detection** — Identifies suspicious process chains, orphan processes, and injection patterns
+- **NetworkX Integration** — Optional advanced graph analysis with centrality and community detection
+
+### 🧩 Deep Forensics Parsers (V3.5 NEW)
+- **Prefetch Parser** — Execution evidence with run counts, last execution timestamps, and referenced files
+- **$MFT / UsnJrnl Parser** — File system timeline reconstruction with timestomping detection (MACB analysis)
+- **Shimcache Parser** — AppCompatCache historical execution evidence with path extraction
+- **Amcache Parser** — SHA1 hashes, install metadata, and publisher information for binaries
+- **Normalized Output** — All parsers produce ThreatFinding-compatible output
+
+### 🤖 Hypothesis-Driven AI Copilot (V3.5 NEW)
+- **Autonomous Investigation** — Multi-phase workflow: Triage → Hypothesis → Evidence → Analysis → Conclusion
+- **Hypothesis Engine** — Generates ranked investigative hypotheses (AI-powered or heuristic fallback)
+- **Evidence Collector** — Systematically gathers and grades evidence (Strong/Moderate/Weak/Contradictory)
+- **Confidence Scoring** — Auto-computed hypothesis confidence from weighted evidence
+- **Investigation Reports** — Structured reports with executive summary and recommended actions
+- **Interactive Q&A** — Drill-down conversations grounded in investigation data
+
+### 🔓 Auto-Deobfuscation Engine (V3.5 NEW)
+- **PowerShell Deobfuscation** — Base64, backtick escapes, format strings (-f), XOR payloads, char() arrays, environment variable replacement
+- **Bash Deobfuscation** — Command concatenation, hex encoding, base64 pipes, $() substitution, eval chains
+- **Generic Deobfuscation** — URL encoding, HTML entities, Unicode escapes
+- **Recursive Processing** — Multi-layer deobfuscation with configurable depth limits
+- **C2 Extraction** — Automatically extracts IPs, domains, URLs from deobfuscated payloads
+- **Deobfuscation Pipeline** — Chain multiple deobfuscators with detailed step-by-step trace
+
+### 📝 Dynamic Rule Generator (V3.5 NEW)
+- **Sigma Rule Generation** — Auto-generates valid SigmaHQ-format YAML rules with field selections and conditions
+- **YARA Rule Generation** — Produces YARA signatures with string/hex/regex patterns from payloads
+- **MITRE ATT&CK Mapping** — Auto-maps generated rules to techniques and tactics
+- **Finding-Based Generation** — Creates detection rules directly from analysis findings
+- **Behavioral Pattern Rules** — Generates rules from behavioral chain detections
+- **Metadata Enrichment** — Includes author, date, severity, description, and references
+
+### 🟣 Purple Team MITRE Verifier (V3.5 NEW)
+- **Atomic Red Team Integration** — Loads and parses Atomic Red Team YAML test catalogs
+- **Simulation Evaluation** — Matches test signatures against Sigma rules and built-in patterns (no live execution)
+- **Coverage Matrix** — Builds technique × data source × status coverage heatmaps
+- **ATT&CK Navigator Export** — Generates Navigator-compatible JSON layers
+- **Gap Analysis** — Identifies detection gaps with prioritized remediation recommendations
+- **Maturity Scoring** — Per-tactic maturity scoring for compliance and reporting
+- **Built-in Test Stubs** — 20 pre-loaded tests for critical techniques when no external tests available
+
+### 🔍 Detection Power
+- **55+ Built-in Detection Categories** — Advanced regex patterns covering cloud, Linux, network, and application attacks
+- **SigmaHQ Integration** — Auto-sync and parse 3000+ Sigma rules with full condition support
+- **YARA Scanning** — 20+ built-in rules for malware, webshells, exploit tools, and suspicious documents
+- **Behavioral Chain Detection** — 15 multi-stage attack patterns with time-window correlation
+- **30 Correlation Rules** — Kill chain analysis and score boosting
+
+### 🐧 Linux Log Support (V3)
+- **Syslog Parser** — RFC 3164/5424 with facility/severity extraction
+- **Auth Log Parser** — SSH login, sudo, PAM, account management events
+- **Journald Parser** — systemd journal JSON exports with full metadata
+- **Apache/Nginx Parser** — Access and error logs with suspicious request flagging
+- **Firewall Parser** — iptables/nftables/ufw with action and protocol extraction
+
+### 📡 Live Monitoring (V3)
+- **Real-time Log Tailing** — Tail live log files with instant detection
+- **Multi-file Monitoring** — Monitor multiple files simultaneously
+- **Live Alert Stream** — Real-time alert cards with severity color-coding
+- **Statistics Dashboard** — Events/sec, alerts, critical findings counters
+
+### 🌐 Multi-Platform Parsers
+- Windows EVTX & Sysmon
+- Linux syslog, auth.log, journald, firewall
+- Apache/Nginx access & error logs
+- macOS Unified Logs
+- AWS CloudTrail
+- Azure Activity Logs
+- GCP Cloud Audit Logs
+- Generic text/syslog
+
+### 🧠 AI Analysis Core
+- **Attack Narrative Engine** — Generates professional incident reports from findings
+- **Analyst Copilot** — Chat interface for Q&A grounded in session data
+- **Training Mode** — Socratic educational approach for junior analysts
+- **Agentic Copilot** — Autonomous hypothesis-driven investigation (V3.5)
+
+### 📡 Threat Intelligence
+- VirusTotal, AbuseIPDB, AlienVault OTX API integration
+- APT Group Attribution (20 groups: APT28, APT29, Lazarus, Volt Typhoon, Scattered Spider, etc.)
+- CVE/NVD Feed with exploit checks
+- Cached lookups with rate limiting
+
+### 🎨 Modern Web UI
+- Premium dark-themed cybersecurity aesthetic
+- Interactive dashboards with severity charts
+- Attack timeline visualization
+- MITRE ATT&CK heatmap
+- AI Copilot chat interface
+- Live monitoring dashboard
+
+### 🔐 Security Hardening (V3)
+- Content Security Policy (CSP) headers
+- X-Frame-Options, X-Content-Type-Options, HSTS
+- In-memory rate limiting per IP with auto-blocking
+- Input validation and path traversal prevention
+- File upload magic byte validation
+- Audit logging with IP anonymization
+
+---
+
+## 🚀 Quick Start
+
+### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/0xsabry/ThreatScope.git
-cd ThreatScope
+git clone https://github.com/0xsabry/ThreatscopeX.git
+cd ThreatscopeX
 
-# Run (Python 3.8+ required, no pip installs needed)
-python 0xSABRY_ThreatScope.py
-
-# Optional: install enhanced dependencies
+# Install dependencies
 pip install -r requirements.txt
+
+# Optional: Install AI and reporting features
+pip install reportlab python-docx yara-python
+
+# Optional: Install graph engine (V3.5)
+pip install networkx
 ```
 
----
-
-## Usage
-
-### GUI Mode (Default)
+### Launch Web Dashboard
 
 ```bash
-python 0xSABRY_ThreatScope.py
+# Start the web interface
+python app.py
+
+# Or via CLI
+python cli.py web --host 127.0.0.1 --port 5000
 ```
 
-1. **Load Log** — Click `📂 Load Log` and select a `.log`, `.txt`, or `.evtx` file
-2. **Analyze** — Click `🔍 Analyze` — analysis runs in a background thread
-3. **Review** — Navigate tabs to explore findings, timeline, MITRE coverage, and IOCs
-4. **Export** — Click `💾 Export JSON` or `🔗 Export STIX` for machine-readable reports
+Then open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
 
-### CLI Mode (Headless)
+### CLI Analysis
 
 ```bash
-# Analyze and print text report
-python 0xSABRY_ThreatScope.py -f server.log --report
+# Analyze a Windows event log
+python cli.py analyze path/to/Security.evtx -r
 
-# Analyze and export JSON report
-python 0xSABRY_ThreatScope.py -f data.evtx -j report.json
+# Analyze a Linux auth.log
+python cli.py analyze /var/log/auth.log -r
 
-# Export IOCs as STIX 2.1 bundle
-python 0xSABRY_ThreatScope.py -f log.txt --stix iocs.json
+# Analyze with JSON export
+python cli.py analyze path/to/access.log -o report.json -f json
 
-# Full analysis with all exports
-python 0xSABRY_ThreatScope.py -f access.log -r -j report.json --stix iocs.json
+# Analyze with STIX 2.1 export
+python cli.py analyze path/to/events.json -o stix_bundle.json -f stix
+
+# Sync Sigma rules from SigmaHQ
+python cli.py sync
 ```
 
-| Flag             | Description                         |
-| ---------------- | ----------------------------------- |
-| `-f`, `--file`   | Path to log file (required for CLI) |
-| `-r`, `--report` | Print text report to stdout         |
-| `-j`, `--json`   | Export JSON report to path          |
-| `--stix`         | Export STIX 2.1 IOC bundle          |
+### V3.5 Enterprise Modules Usage
 
----
+```python
+# ── Process Graph & Root Cause Analysis ──
+from core.graph_engine import ProcessGraph, RootCauseAnalyzer
+graph = ProcessGraph()
+graph.ingest_events(parsed_events)
+rca = RootCauseAnalyzer(graph)
+root_cause = rca.analyze(suspicious_pid=1234)
+graph.export_d3_json("process_graph.json")
 
-## Sigma Rule Support
+# ── Deep Forensics Parsing ──
+from parsers.forensic_parsers import PrefetchParser, ShimcacheParser
+pf = PrefetchParser()
+findings = pf.parse_prefetch_csv("prefetch_timeline.csv")
 
-Place Sigma-format YAML files in `sigma_rules/` to extend detection:
+# ── Auto-Deobfuscation ──
+from core.deobfuscator import DeobfuscationPipeline
+pipeline = DeobfuscationPipeline()
+result = pipeline.process(obfuscated_payload)
+print(result["final_output"])    # Clean payload
+print(result["c2_indicators"])   # Extracted IPs/domains
 
-```yaml
-title: Suspicious PowerShell Encoded Command
-level: high
-tags:
-  - attack.t1059.001
-detection:
-  keywords:
-    - "powershell -encodedcommand"
-    - "powershell -w hidden"
-  condition: keywords
+# ── Dynamic Rule Generation ──
+from core.rule_gen import SigmaRuleGenerator, YaraRuleGenerator
+sigma_gen = SigmaRuleGenerator()
+rule = sigma_gen.from_finding(finding_dict)
+sigma_gen.save_rule(rule, "rules/custom_detection.yml")
+
+# ── Purple Team MITRE Verification ──
+from core.atomic_verifier import MITREVerifier
+verifier = MITREVerifier()
+verifier.load_atomics("atomic-red-team/atomics/")
+report = verifier.run_full_assessment(sigma_engine=engine)
+verifier.export_report("coverage.json", fmt="navigator")
+
+# ── Hypothesis-Driven AI Investigation ──
+from ai.agentic_core import AgenticCopilot
+copilot = AgenticCopilot()
+report = copilot.investigate(analysis_results)
+print(report["executive_summary"])
+copilot.ask("What evidence supports credential theft?")
 ```
 
-Rules are automatically loaded during analysis. Install `pyyaml` for Sigma support:
+### Live Monitoring
 
 ```bash
-pip install pyyaml
+# Start web UI then navigate to /live-monitor
+python app.py
+# Open http://127.0.0.1:5000/live-monitor
+
+# Or use the API:
+curl -X POST http://127.0.0.1:5000/api/live/start \
+  -H "Content-Type: application/json" \
+  -d '{"path": "/var/log/auth.log"}'
+```
+
+### API Configuration
+
+Set these environment variables for full functionality:
+
+```bash
+# AI Features
+export OPENAI_API_KEY="your_key"
+
+# Threat Intelligence
+export VT_API_KEY="your_virustotal_key"
+export ABUSEIPDB_API_KEY="your_abuseipdb_key"
+export OTX_API_KEY="your_otx_key"
+
+# Security (optional)
+export FLASK_SECRET_KEY="your_secret_key"
 ```
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-ThreatScope/
-├── 0xSABRY_ThreatScope.py      # Main application (GUI + CLI + Engine)
-├── requirements.txt             # Optional dependencies
-├── sigma_rules/                 # Custom Sigma detection rules (YAML)
-│   └── example_powershell.yml   # Example Sigma rule
-├── sample_anonymous_report.json # Sample analysis output
-├── sample_anyonomus login.evtx  # Sample EVTX log for testing
-├── CONTRIBUTING.md              # Contribution guidelines
-├── SECURITY.md                  # Vulnerability reporting policy
-├── LICENSE                      # MIT License
-└── README.md                    # This file
+ThreatscopeX/
+├── app.py                      # Flask web application (security-hardened)
+├── cli.py                      # Enhanced CLI interface
+├── config.py                   # Global configuration (V3 hardened)
+├── requirements.txt            # Dependencies
+├── core/
+│   ├── analyzer.py             # Main analysis orchestrator (55+ patterns)
+│   ├── sigma_engine.py         # Full Sigma rule parser
+│   ├── sigma_sync.py           # SigmaHQ auto-sync
+│   ├── behavioral_chain.py     # 15 multi-stage attack chains
+│   ├── yara_engine.py          # YARA scanning engine
+│   ├── ioc_extractor.py        # IOC extraction engine
+│   ├── correlation.py          # 30 correlation rules
+│   ├── false_positive.py       # FP suppression engine
+│   ├── realtime_monitor.py     # File change monitoring
+│   ├── live_monitor.py         # V3: Live log tailing & detection
+│   ├── security.py             # V3: Security hardening module
+│   ├── graph_engine.py         # V3.5: Causal process graph & RCA
+│   ├── deobfuscator.py         # V3.5: Auto-deobfuscation engine
+│   ├── rule_gen.py             # V3.5: Dynamic Sigma/YARA generation
+│   └── atomic_verifier.py      # V3.5: Purple team MITRE verifier
+├── parsers/
+│   ├── log_parsers.py          # Multi-platform log parsers + auto-detection
+│   ├── linux_parsers.py        # V3: Dedicated Linux log parsers
+│   └── forensic_parsers.py     # V3.5: Deep forensics artifact parsers
+├── intel/
+│   ├── enrichment.py           # VT/AbuseIPDB/OTX enrichment
+│   └── apt_mapper.py           # 20 APT groups + 100+ MITRE techniques
+├── ai/
+│   ├── ai_core.py              # Narrative, Copilot, Training
+│   └── agentic_core.py         # V3.5: Hypothesis-driven AI investigation
+├── export/
+│   └── exporters.py            # JSON/CSV/STIX/PDF/DOCX
+├── yara_rules/
+│   ├── malware_signatures.yar  # V3: Cobalt Strike, Mimikatz, ransomware, RATs
+│   ├── webshells.yar           # V3: PHP/ASP/JSP webshells
+│   ├── exploit_tools.yar       # V3: Privesc, credential dump, lateral movement tools
+│   ├── suspicious_documents.yar# V3: Malicious macros, PE in docs, PDF exploits
+│   └── linux_threats.yar       # V3: Rootkits, crypto miners, Linux backdoors
+├── templates/                  # Jinja2 HTML templates
+│   ├── base.html
+│   ├── dashboard.html
+│   ├── analysis.html
+│   ├── timeline.html
+│   ├── mitre.html
+│   ├── intel.html
+│   ├── copilot.html
+│   ├── rules.html
+│   ├── settings.html
+│   └── live_monitor.html       # V3: Real-time monitoring UI
+└── static/
+    ├── css/style.css           # Premium dark theme
+    └── js/app.js               # Frontend logic
 ```
 
 ---
 
-## Correlation Engine (15 Rules)
+## 🎯 MITRE ATT&CK Coverage
 
-| Chain Name                    | Signals Required                                          | Boost |
-| ----------------------------- | --------------------------------------------------------- | ----- |
-| Credential Compromise Chain   | brute_force + privilege_escalation                        | +20   |
-| Full Kill Chain Detected      | credential_dumping + lateral_movement + data_exfiltration | +30   |
-| Ransomware Deployment Chain   | lateral_movement + av_tamper + ransomware                 | +25   |
-| Active C2 with Exfiltration   | command_and_control + data_exfiltration                   | +20   |
-| Persistence + Defense Evasion | persistence + log_tampering                               | +15   |
-| AD Compromise Chain           | ad_recon + kerberoasting + golden_silver_ticket           | +30   |
-| Phishing to Credential Dump   | phishing_url + credential_dumping                         | +20   |
-| Web Attack to Shell           | sql_injection + reverse_shell                             | +20   |
-| Supply Chain + Persistence    | dependency_confusion + persistence                        | +20   |
-| Insider Threat Indicators     | off_hours_access + bulk_download                          | +15   |
-| **API Attack Chain** ⭐       | jwt_abuse + broken_auth_api                               | +20   |
-| **AI System Compromise** ⭐   | prompt_injection + data_extraction_llm                    | +25   |
-| **MFA Bypass + Lateral** ⭐   | mfa_fatigue + lateral_movement                            | +25   |
-| **Crypto Theft Chain** ⭐     | wallet_theft + crypto_clipper                             | +25   |
-| **Network MitM + Creds** ⭐   | arp_poisoning + credential_dumping                        | +20   |
+ThreatScope V3.5 maps findings to **100+ MITRE ATT&CK techniques** across all **14 tactics** and provides:
+- Interactive heatmap visualization
+- APT group attribution (20 groups)
+- Kill chain coverage analysis
+- Technique-to-tactic mapping
+- Sub-technique resolution
+- **V3.5:** ATT&CK Navigator layer export from purple team verification
 
 ---
 
-## Threat Scoring
+## 🛡️ Built-in Detection Categories (55+)
 
-| Score  | Level       | Action                               |
-| ------ | ----------- | ------------------------------------ |
-| 80–100 | CRITICAL 🔴 | Immediate incident response required |
-| 60–79  | HIGH 🟠     | Urgent investigation needed          |
-| 40–59  | MEDIUM 🟡   | Active monitoring and review         |
-| 20–39  | LOW 🟢      | Document and track                   |
-| 0–19   | MINIMAL ⚪  | Continue routine monitoring          |
+### Original Categories (25)
+1. Brute Force & Authentication Attacks
+2. Credential Dumping (Mimikatz, LSASS)
+3. Privilege Escalation (UAC Bypass, Token Manipulation)
+4. Lateral Movement (PsExec, WMI, SMB)
+5. Data Exfiltration
+6. Persistence Mechanisms
+7. Command & Control (Cobalt Strike, Empire)
+8. Ransomware Indicators
+9. Log Tampering & Anti-Forensics
+10. Reverse Shells
+11. SQL Injection
+12. PowerShell Abuse
+13. AV/Security Tool Tampering
+14. Kerberoasting & Golden/Silver Ticket
+15. Active Directory Reconnaissance
+16. Phishing & Social Engineering
+17. Container Escape
+18. ARP Poisoning
+19. MFA Fatigue Attacks
+20. JWT Token Abuse
+21. AI Prompt Injection
+22. Network Discovery
+23. WMI Abuse
+24. Scheduled Task Persistence
+25. Off-Hours Access
+
+### V3 Extended Categories (30+)
+26. Linux SSH Brute Force
+27. Linux Rootkit Indicators
+28. Linux Cron Persistence
+29. Linux Privilege Escalation
+30. Cryptojacking
+31. Supply Chain Attack
+32. Cloud IAM Abuse
+33. Cloud Storage Exfiltration
+34. API BOLA/IDOR
+35. DNS Tunneling
+36. DGA Detection
+37. WAF Bypass
+38. SSRF Attacks
+39. XXE Injection
+40. Deserialization Attacks
+41. Memory Injection
+42. Boot Persistence
+43. Firmware Attacks
+44. Keylogger Activity
+45. Clipboard Hijacking
+46. Screen Capture
+47. Crypto Wallet Theft
+48. WiFi Attacks
+49. USB Device Abuse
+50. Email Compromise
+51. Zero-Day Indicators
+52. Fileless Malware
+53. Active Directory DCSync
+54. Cloud Logging Tampering
+55. Linux Shell Escape
 
 ---
 
-## License
+## 📊 Export Formats
+
+| Format | Description |
+|--------|-------------|
+| JSON | Full analysis results with all findings and metadata |
+| CSV | Flat findings table for spreadsheet analysis |
+| STIX 2.1 | Standard threat intelligence sharing format |
+| PDF | Professional executive report with charts |
+| DOCX | Editable Word document for incident reports |
+| ATT&CK Navigator | MITRE ATT&CK Navigator layer JSON (V3.5) |
+
+---
+
+## 🕵️ APT Group Database (20 Groups)
+
+| Group | Country | Aliases |
+|-------|---------|---------| 
+| APT28 | Russia | Fancy Bear, Sofacy, STRONTIUM |
+| APT29 | Russia | Cozy Bear, NOBELIUM |
+| APT41 | China | Winnti, BARIUM, Double Dragon |
+| Lazarus | North Korea | HIDDEN COBRA, Zinc |
+| APT1 | China | Comment Crew, PLA Unit 61398 |
+| FIN7 | Russia | Carbanak, Carbon Spider |
+| Sandworm | Russia | Voodoo Bear, IRIDIUM |
+| Turla | Russia | Snake, Venomous Bear |
+| APT32 | Vietnam | OceanLotus, Canvas Cyclone |
+| MuddyWater | Iran | MERCURY, Static Kitten |
+| **Kimsuky** | North Korea | Velvet Chollima, Thallium |
+| **Gamaredon** | Russia | Primitive Bear, Shuckworm |
+| **Charming Kitten** | Iran | APT35, Mint Sandstorm |
+| **Hafnium** | China | Silk Typhoon |
+| **Darkside** | Russia | BlackMatter |
+| **REvil** | Russia | Sodinokibi, GoldSouthfield |
+| **Volt Typhoon** | China | Bronze Silhouette |
+| **Scattered Spider** | International | UNC3944, Roasted 0ktapus |
+| **LockBit** | Russia | LockBit 3.0, LockBitSupp |
+| **ALPHV/BlackCat** | Russia | BlackCat, Noberus |
+
+*Bold = V3 additions*
+
+---
+
+## 📝 License
 
 MIT License — see [LICENSE](LICENSE)
 
 ---
 
-<div align="center">
+## 👨‍💻 Author
 
-Made with ❤️ by <a href="https://github.com/0xsabry">0xSABRY</a> — SOC Analyst & Security Researcher
+**Mohamed Sabry (0xSABRY)**
+- SOC Analyst & Threat Hunter
+- Founder of Zero2Aura
+- [GitHub](https://github.com/0xsabry)
 
-[![LinkedIn](https://img.shields.io/badge/Connect_on_LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/mohamed-sabry-hamdan/)
-[![GitHub](https://img.shields.io/badge/Follow_on_GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/0xsabry)
+---
 
-</div>
+<p align="center">
+  <strong>⭐ Star this repo if ThreatScope helps your investigations! ⭐</strong>
+</p>

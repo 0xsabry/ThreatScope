@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}AI Copilot{% endblock %}
+{% block page_title %}AI Analyst Copilot{% endblock %}
+
+{% block content %}
+<div class="copilot-container" id="copilot-container">
+    <!-- Mode Toggle -->
+    <div class="copilot-modes" id="copilot-modes">
+        <button class="mode-btn active" onclick="setCopilotMode('copilot', this)" id="mode-copilot-btn">
+            <i class="fas fa-robot"></i> Analyst Copilot
+        </button>
+        <button class="mode-btn" onclick="setCopilotMode('training', this)" id="mode-training-btn">
+            <i class="fas fa-graduation-cap"></i> Training Mode
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="generateNarrative()" id="narrative-btn">
+            <i class="fas fa-book"></i> Generate Attack Narrative
+        </button>
+    </div>
+
+    <!-- Chat Messages -->
+    <div class="chat-messages" id="chat-messages">
+        <div class="chat-message bot" id="welcome-message">
+            <div class="message-avatar"><i class="fas fa-robot"></i></div>
+            <div class="message-content">
+                <p>Welcome to ThreatScope AI Copilot. I can answer questions about your current analysis session.</p>
+                <p>Try asking: "What are the most critical findings?" or "Summarize the attack timeline."</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input-container" id="chat-input-container">
+        <input type="text" id="chat-input" placeholder="Ask about your analysis..." onkeydown="if(event.key==='Enter')sendCopilotMessage()">
+        <button class="btn btn-primary" onclick="sendCopilotMessage()" id="send-btn">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let copilotMode = 'copilot';
+
+function setCopilotMode(mode, btn) {
+    copilotMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+async function sendCopilotMessage() {
+    const input = document.getElementById('chat-input');
+    const question = input.value.trim();
+    if (!question) return;
+
+    addChatMessage(question, 'user');
+    input.value = '';
+
+    const sendBtn = document.getElementById('send-btn');
+    sendBtn.disabled = true;
+
+    try {
+        const resp = await fetch('/api/copilot', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({question, mode: copilotMode})
+        });
+        const data = await resp.json();
+        addChatMessage(data.response || data.error || 'No response', 'bot');
+    } catch(e) {
+        addChatMessage('Error: ' + e.message, 'bot');
+    } finally {
+        sendBtn.disabled = false;
+    }
+}
+
+async function generateNarrative() {
+    const btn = document.getElementById('narrative-btn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+    try {
+        const resp = await fetch('/api/narrative', {method: 'POST'});
+        const data = await resp.json();
+        addChatMessage(data.narrative || data.error || 'No narrative generated', 'bot');
+    } catch(e) { addChatMessage('Error: ' + e.message, 'bot'); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-book"></i> Generate Attack Narrative'; }
+}
+
+function addChatMessage(text, sender) {
+    const container = document.getElementById('chat-messages');
+    const msg = document.createElement('div');
+    msg.className = 'chat-message ' + sender;
+    const icon = sender === 'user' ? 'fa-user' : 'fa-robot';
+    msg.innerHTML = '<div class="message-avatar"><i class="fas ' + icon + '"></i></div><div class="message-content"><p>' + text.replace(/\n/g, '<br>') + '</p></div>';
+    container.appendChild(msg);
+    container.scrollTop = container.scrollHeight;
+}
+</script>
+{% endblock %}

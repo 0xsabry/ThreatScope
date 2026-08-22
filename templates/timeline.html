@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Timeline{% endblock %}
+{% block page_title %}Attack Timeline{% endblock %}
+
+{% block content %}
+{% if results and results.timeline %}
+<div class="timeline-container" id="timeline-container">
+    <div class="timeline-controls" id="timeline-controls">
+        <button class="btn btn-sm" onclick="zoomTimeline('in')"><i class="fas fa-search-plus"></i></button>
+        <button class="btn btn-sm" onclick="zoomTimeline('out')"><i class="fas fa-search-minus"></i></button>
+        <span class="timeline-count">{{ results.timeline|length }} events</span>
+    </div>
+    <div class="timeline-scroll" id="timeline-scroll">
+        <div class="timeline-line"></div>
+        {% for event in results.timeline[:200] %}
+        <div class="timeline-node severity-{{ event.severity|lower }}" id="timeline-node-{{ loop.index }}" onclick="expandTimelineNode(this)">
+            <div class="node-dot"></div>
+            <div class="node-card">
+                <div class="node-time">{{ event.timestamp or 'N/A' }}</div>
+                <div class="node-title">
+                    <span class="severity-badge sm {{ event.severity|lower }}">{{ event.severity|upper }}</span>
+                    {{ event.title }}
+                </div>
+                <div class="node-details" style="display:none">
+                    <p><i class="fas fa-hashtag"></i> Line {{ event.line_number or 'N/A' }}</p>
+                    <pre>{{ event.raw[:300] if event.raw else '' }}</pre>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="empty-state"><div class="empty-icon"><i class="fas fa-timeline"></i></div><h2>No Timeline Data</h2><p>Timeline is generated after analysis</p></div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function expandTimelineNode(el) {
+    const details = el.querySelector('.node-details');
+    if (details) details.style.display = details.style.display === 'none' ? 'block' : 'none';
+}
+function zoomTimeline(dir) {
+    const container = document.getElementById('timeline-scroll');
+    if (!container) return;
+    const scale = dir === 'in' ? 1.2 : 0.8;
+    const current = parseFloat(container.style.transform?.replace('scaleX(','')?.replace(')','') || 1);
+    container.style.transform = `scaleX(${current * scale})`;
+}
+</script>
+{% endblock %}
