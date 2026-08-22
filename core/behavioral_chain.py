@@ -149,6 +149,72 @@ BEHAVIORAL_CHAINS = [
         "confidence": 0.88,
         "mitre_chain": ["TA0005", "TA0008"],
     },
+    # V3 — Extended Behavioral Chains
+    {
+        "id": "BC-011",
+        "name": "SSH Brute Force to Privilege Escalation",
+        "description": "Repeated SSH auth failures followed by privilege escalation — Linux compromise chain",
+        "stages": [
+            {"event_type": "ssh_bruteforce", "labels": ["ssh_brute_force", "auth_failure", "failed_login"], "min_count": 10},
+            {"event_type": "linux_priv_esc", "labels": ["linux_privesc", "privilege_escalation", "suid_abuse"]},
+        ],
+        "window_minutes": 30,
+        "severity": "critical",
+        "confidence": 0.90,
+        "mitre_chain": ["TA0006", "TA0004"],
+    },
+    {
+        "id": "BC-012",
+        "name": "Cloud Credential Theft to IAM Abuse",
+        "description": "Cloud credential compromise followed by IAM policy changes",
+        "stages": [
+            {"event_type": "cloud_cred", "labels": ["cloud_credential_theft", "credential_dumping", "access_key_theft"]},
+            {"event_type": "iam_abuse", "labels": ["cloud_iam_abuse", "iam_policy_change", "role_creation"]},
+        ],
+        "window_minutes": 120,
+        "severity": "critical",
+        "confidence": 0.85,
+        "mitre_chain": ["TA0006", "TA0004"],
+    },
+    {
+        "id": "BC-013",
+        "name": "Fileless to Memory Injection",
+        "description": "AMSI bypass or LOLBin execution followed by process memory injection",
+        "stages": [
+            {"event_type": "fileless", "labels": ["fileless_malware", "amsi_bypass", "lolbin"]},
+            {"event_type": "mem_inject", "labels": ["memory_injection", "process_hollowing", "reflective_dll"]},
+        ],
+        "window_minutes": 10,
+        "severity": "critical",
+        "confidence": 0.92,
+        "mitre_chain": ["TA0005", "TA0004"],
+    },
+    {
+        "id": "BC-014",
+        "name": "Cryptojacking with Cron Persistence",
+        "description": "Crypto mining activity followed by cron job creation for persistence",
+        "stages": [
+            {"event_type": "crypto", "labels": ["cryptojacking", "crypto_miner", "xmrig"]},
+            {"event_type": "cron_persist", "labels": ["linux_cron_persistence", "cron_job", "scheduled_task"]},
+        ],
+        "window_minutes": 60,
+        "severity": "high",
+        "confidence": 0.85,
+        "mitre_chain": ["TA0040", "TA0003"],
+    },
+    {
+        "id": "BC-015",
+        "name": "DNS Tunnel to Data Exfil",
+        "description": "DNS tunnel establishment followed by data exfiltration via DNS",
+        "stages": [
+            {"event_type": "dns_tunnel", "labels": ["dns_tunneling", "dns_tunnel", "covert_channel"]},
+            {"event_type": "dns_exfil", "labels": ["data_exfiltration", "dns_exfil", "large_upload"]},
+        ],
+        "window_minutes": 180,
+        "severity": "critical",
+        "confidence": 0.82,
+        "mitre_chain": ["TA0011", "TA0010"],
+    },
 ]
 
 

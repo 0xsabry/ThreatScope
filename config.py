@@ -1,15 +1,18 @@
 """
-ThreatScope V2 — Global Configuration
+ThreatScope V3 — Global Configuration
 Author: 0xSABRY
+
+Security-hardened configuration with cryptographically secure defaults.
 """
 
 import os
+import secrets
 from pathlib import Path
 
 # ============================================================
 # Version & Identity
 # ============================================================
-VERSION = "2.0.0"
+VERSION = "3.0.0"
 APP_NAME = "ThreatScope"
 AUTHOR = "0xSABRY"
 TAGLINE = "Advanced DFIR & Threat Detection Platform"
@@ -54,6 +57,30 @@ FP_SUPPRESSION_THRESHOLD = 0.85
 REALTIME_POLL_INTERVAL_SECONDS = 5
 ENRICHMENT_CACHE_TTL_HOURS = 24
 MAX_CONCURRENT_ENRICHMENTS = 10
+
+# ============================================================
+# Security Settings
+# ============================================================
+# Cryptographically secure SECRET_KEY with env var override
+SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(32))
+FLASK_DEBUG = os.environ.get("FLASK_DEBUG", "false").lower() == "true"  # False by default
+FLASK_HOST = os.environ.get("FLASK_HOST", "127.0.0.1")
+FLASK_PORT = int(os.environ.get("FLASK_PORT", "5000"))
+
+# Rate limiting
+RATE_LIMIT_REQUESTS = 120  # per window
+RATE_LIMIT_WINDOW = 60     # seconds
+RATE_LIMIT_BLOCK_DURATION = 300  # 5 min block after exceeded
+
+# Upload restrictions
+MAX_UPLOAD_SIZE_MB = 500
+ALLOWED_UPLOAD_EXTENSIONS = {
+    ".log", ".txt", ".evtx", ".json", ".csv",
+    ".syslog", ".xml", ".gz",
+}
+
+# Audit logging
+AUDIT_LOG_FILE = LOG_DIR / "audit.log"
 
 # ============================================================
 # UI Theme (used by templates)
@@ -106,10 +133,5 @@ MITRE_TACTICS = {
     "TA0043": "Reconnaissance",
 }
 
-# ============================================================
-# Flask Configuration
-# ============================================================
-FLASK_HOST = "127.0.0.1"
-FLASK_PORT = 5000
-FLASK_DEBUG = True
-SECRET_KEY = os.environ.get("SECRET_KEY", os.urandom(32).hex())
+
+

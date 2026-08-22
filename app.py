@@ -1,9 +1,10 @@
 """
-ThreatScope V2 — Flask Web Application
+ThreatScope V3 — Flask Web Application
 Author: 0xSABRY
 
 Modern web-based DFIR platform with dark-themed UI,
-interactive dashboards, and real-time analysis.
+interactive dashboards, real-time analysis, and live monitoring.
+Security-hardened with CSP headers, rate limiting, and audit logging.
 """
 
 import os
@@ -30,6 +31,11 @@ from core.analyzer import LogAnalyzer
 from core.sigma_engine import SigmaEngine
 from core.sigma_sync import SigmaSync
 from core.realtime_monitor import RealtimeMonitor
+from core.live_monitor import LiveLogMonitor
+from core.security import (
+    InputValidator, RateLimiter, SecureFileHandler,
+    SecurityHeaders, AuditLogger,
+)
 from intel.enrichment import ThreatIntelEnrichment
 from intel.apt_mapper import APTMapper, CVEFeed, get_technique_name
 from ai.ai_core import NarrativeEngine, AnalystCopilot, TrainingMode
@@ -45,16 +51,47 @@ app = Flask(__name__,
             template_folder="templates")
 app.secret_key = SECRET_KEY
 app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500MB max upload
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 # Ensure directories exist
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+
+# Security components
+rate_limiter = RateLimiter(max_requests=120, window_seconds=60)
+secure_files = SecureFileHandler(upload_dir=UPLOAD_DIR, export_dir=EXPORT_DIR)
+audit_log = AuditLogger()
 
 # Global state
 current_analysis = {"results": None, "analyzer": None}
 copilot = AnalystCopilot()
 training = TrainingMode()
 realtime = RealtimeMonitor()
+live_monitor = LiveLogMonitor()
+
+
+# ============================================================
+# Security Middleware
+# ============================================================
+@app.after_request
+def apply_security_headers(response):
+    """Apply security headers to every response."""
+    return SecurityHeaders.apply(response)
+
+
+@app.before_request
+def check_rate_limit():
+    """Enforce rate limiting on all API endpoints."""
+    if request.path.startswith("/api/"):
+        client_ip = request.remote_addr or "unknown"
+        allowed, info = rate_limiter.is_allowed(client_ip)
+        if not allowed:
+            audit_log.log_rate_limit(client_ip, request.path)
+            return jsonify({
+                "error": "Rate limit exceeded",
+                "retry_after": info.get("retry_after", 60),
+            }), 429
 
 ALLOWED_EXTENSIONS = {".log", ".txt", ".evtx", ".json", ".csv", ".syslog", ".xml"}
 
@@ -349,14 +386,72 @@ def format_number_filter(value):
 # Entry Point
 # ============================================================
 
+
+# ============================================================
+# Live Monitor Routes
+# ============================================================
+@app.route("/live-monitor")
+def live_monitor_page():
+    """Live log monitoring dashboard."""
+    return render_template("live_monitor.html", app_name=APP_NAME, version=VERSION)
+
+
+@app.route("/api/live/start", methods=["POST"])
+def api_live_start():
+    """Start live log monitoring."""
+    data = request.get_json(force=True, silent=True) or {}
+    path = data.get("path", "").strip()
+
+    if not path:
+        return jsonify({"error": "Path is required"}), 400
+
+    # Validate path
+    path = InputValidator.sanitize_string(path, max_length=1024)
+
+    target = Path(path)
+    if target.is_dir():
+        live_monitor.add_directory(str(target))
+    elif target.is_file():
+        live_monitor.add_file(str(target))
+    else:
+        return jsonify({"error": "Path not found"}), 404
+
+    if not live_monitor.is_running:
+        live_monitor.start()
+
+    audit_log.log_security_event(
+        request.remote_addr or "", "live_monitor_start", f"path={path}"
+    )
+    return jsonify({"status": "monitoring", "path": path})
+
+
+@app.route("/api/live/stop", methods=["POST"])
+def api_live_stop():
+    """Stop live log monitoring."""
+    live_monitor.stop()
+    return jsonify({"status": "stopped"})
+
+
+@app.route("/api/live/status")
+def api_live_status():
+    """Get live monitor status and recent alerts."""
+    return jsonify(live_monitor.get_stats())
+
+
+# ============================================================
+# Main Entry Point
+# ============================================================
+
 if __name__ == "__main__":
     print(f"""
     ╔══════════════════════════════════════════════╗
     ║  🛡️  ThreatScope V{VERSION}                      ║
     ║  Advanced DFIR & Threat Detection Platform   ║
+    ║  SECURITY HARDENED                           ║
     ║  by 0xSABRY                                  ║
     ╠══════════════════════════════════════════════╣
     ║  Dashboard: http://{FLASK_HOST}:{FLASK_PORT}           ║
+    ║  Live Monitor: /live-monitor                 ║
     ╚══════════════════════════════════════════════╝
     """)
     app.run(host=FLASK_HOST, port=FLASK_PORT, debug=FLASK_DEBUG)

@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}Live Monitor — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><span class="icon">📡</span> Live Log Monitor</h1>
+    <p class="subtitle">Real-time log streaming with instant threat detection</p>
+</div>
+
+<!-- Controls -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <h3><span class="icon">⚙️</span> Monitor Controls</h3>
+        <div id="monitor-status" class="badge badge-inactive">Stopped</div>
+    </div>
+    <div class="card-body">
+        <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 300px;">
+                <label for="log-path" style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">
+                    Log File or Directory Path
+                </label>
+                <input type="text" id="log-path"
+                    placeholder="/var/log/auth.log or /var/log/"
+                    style="width: 100%; padding: 0.75rem 1rem; background: var(--bg-primary);
+                           border: 1px solid var(--border); border-radius: 8px;
+                           color: var(--text-primary); font-family: 'JetBrains Mono', monospace;">
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button onclick="startMonitor()" class="btn btn-primary" id="btn-start">
+                    ▶ Start Monitor
+                </button>
+                <button onclick="stopMonitor()" class="btn btn-danger" id="btn-stop" disabled>
+                    ⏹ Stop
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Live Stats -->
+<div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+    <div class="stat-card">
+        <div class="stat-value" id="stat-eps">0</div>
+        <div class="stat-label">Events/sec</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-lines">0</div>
+        <div class="stat-label">Lines Processed</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-alerts" style="color: var(--warning);">0</div>
+        <div class="stat-label">Total Alerts</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-critical" style="color: var(--critical);">0</div>
+        <div class="stat-label">Critical</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-files">0</div>
+        <div class="stat-label">Files Monitored</div>
+    </div>
+</div>
+
+<!-- Live Alerts Feed -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <h3><span class="icon">🚨</span> Live Alert Feed</h3>
+        <div style="display: flex; gap: 0.5rem;">
+            <select id="severity-filter" onchange="filterAlerts()" style="padding: 0.4rem 0.8rem;
+                background: var(--bg-primary); border: 1px solid var(--border);
+                border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;">
+                <option value="all">All Severities</option>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+            </select>
+            <button onclick="clearAlerts()" class="btn btn-small" style="padding: 0.4rem 0.8rem;
+                font-size: 0.85rem;">Clear</button>
+        </div>
+    </div>
+    <div class="card-body" id="alert-feed"
+        style="max-height: 500px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
+        <div class="empty-state" id="no-alerts">
+            <p style="color: var(--text-muted); text-align: center; padding: 2rem;">
+                📡 Waiting for alerts... Start the monitor to begin real-time detection.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Live Log Stream -->
+<div class="card">
+    <div class="card-header">
+        <h3><span class="icon">📜</span> Log Stream</h3>
+        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="auto-scroll" checked style="accent-color: var(--accent);">
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">Auto-scroll</span>
+        </label>
+    </div>
+    <div class="card-body" id="log-stream"
+        style="max-height: 400px; overflow-y: auto; background: var(--bg-primary);
+               border-radius: 8px; padding: 1rem;
+               font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+               line-height: 1.6; color: var(--text-secondary);">
+        <div id="log-lines">
+            <span style="color: var(--text-muted);">// Log stream will appear here when monitoring starts...</span>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        text-align: center;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent);
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent);
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .stat-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .badge-inactive { background: var(--text-muted); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }
+    .badge-active { background: var(--success); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem;
+                    animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+    .alert-entry {
+        padding: 0.75rem 1rem;
+        border-left: 3px solid;
+        margin-bottom: 0.5rem;
+        border-radius: 0 6px 6px 0;
+        background: var(--bg-elevated);
+        animation: slideIn 0.3s ease-out;
+    }
+    .alert-entry.critical { border-color: var(--critical); }
+    .alert-entry.high { border-color: var(--danger); }
+    .alert-entry.medium { border-color: var(--warning); }
+    .alert-entry.low { border-color: var(--accent); }
+
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+
+    .alert-header { display: flex; justify-content: space-between; margin-bottom: 0.3rem; }
+    .alert-severity { font-weight: 600; text-transform: uppercase; font-size: 0.75rem; }
+    .alert-time { color: var(--text-muted); font-size: 0.75rem; }
+    .alert-title { color: var(--text-primary); font-weight: 500; }
+    .alert-detail { color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.2rem; }
+    .alert-mitre { color: var(--accent-secondary); font-size: 0.75rem; }
+
+    .log-line { white-space: pre-wrap; word-break: break-all; }
+    .log-line.alert-line { color: var(--danger); font-weight: 500; }
+
+    .btn-primary { background: var(--accent); color: var(--bg-primary); border: none; padding: 0.75rem 1.5rem;
+                   border-radius: 8px; cursor: pointer; font-weight: 600; transition: opacity 0.2s; }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-danger { background: var(--danger); color: white; border: none; padding: 0.75rem 1.5rem;
+                  border-radius: 8px; cursor: pointer; font-weight: 600; transition: opacity 0.2s; }
+    .btn-danger:hover { opacity: 0.85; }
+    .btn-danger:disabled { opacity: 0.4; cursor: not-allowed; }
+</style>
+
+<script>
+    let monitorInterval = null;
+    let logLineCount = 0;
+    const MAX_LOG_LINES = 500;
+    const MAX_ALERT_ENTRIES = 200;
+
+    function startMonitor() {
+        const path = document.getElementById('log-path').value.trim();
+        if (!path) {
+            alert('Please enter a log file or directory path.');
+            return;
+        }
+
+        fetch('/api/live/start', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({path: path})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            document.getElementById('btn-start').disabled = true;
+            document.getElementById('btn-stop').disabled = false;
+            document.getElementById('monitor-status').className = 'badge badge-active';
+            document.getElementById('monitor-status').textContent = '● Live';
+            document.getElementById('no-alerts').style.display = 'none';
+
+            // Start polling for updates
+            monitorInterval = setInterval(pollUpdates, 2000);
+        })
+        .catch(err => alert('Connection error: ' + err));
+    }
+
+    function stopMonitor() {
+        fetch('/api/live/stop', {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('btn-start').disabled = false;
+            document.getElementById('btn-stop').disabled = true;
+            document.getElementById('monitor-status').className = 'badge badge-inactive';
+            document.getElementById('monitor-status').textContent = 'Stopped';
+
+            if (monitorInterval) {
+                clearInterval(monitorInterval);
+                monitorInterval = null;
+            }
+        });
+    }
+
+    function pollUpdates() {
+        fetch('/api/live/status')
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) return;
+
+            // Update stats
+            document.getElementById('stat-eps').textContent = data.events_per_second || '0';
+            document.getElementById('stat-lines').textContent = (data.total_lines_processed || 0).toLocaleString();
+            document.getElementById('stat-alerts').textContent = (data.total_alerts || 0).toLocaleString();
+            document.getElementById('stat-critical').textContent = (data.critical_alerts || 0).toLocaleString();
+            document.getElementById('stat-files').textContent = data.monitored_files || '0';
+
+            // Update alerts
+            const alerts = data.recent_alerts || [];
+            const feed = document.getElementById('alert-feed');
+            const filter = document.getElementById('severity-filter').value;
+
+            // Only add new alerts
+            const currentCount = feed.querySelectorAll('.alert-entry').length;
+            const newAlerts = alerts.slice(currentCount);
+
+            newAlerts.forEach(alert => {
+                if (filter !== 'all' && alert.severity !== filter) return;
+                const entry = createAlertEntry(alert);
+                feed.appendChild(entry);
+
+                // Limit entries
+                while (feed.querySelectorAll('.alert-entry').length > MAX_ALERT_ENTRIES) {
+                    const first = feed.querySelector('.alert-entry');
+                    if (first) first.remove();
+                }
+            });
+
+            // Auto-scroll alert feed
+            if (newAlerts.length > 0) {
+                feed.scrollTop = feed.scrollHeight;
+            }
+
+            // Check if monitor stopped
+            if (!data.is_running) {
+                stopMonitor();
+            }
+        })
+        .catch(() => {});
+    }
+
+    function createAlertEntry(alert) {
+        const div = document.createElement('div');
+        div.className = `alert-entry ${alert.severity}`;
+        div.dataset.severity = alert.severity;
+
+        const severityColors = {
+            critical: 'var(--critical)', high: 'var(--danger)',
+            medium: 'var(--warning)', low: 'var(--accent)'
+        };
+        const sevColor = severityColors[alert.severity] || 'var(--text-muted)';
+        const time = alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString() : '';
+
+        div.innerHTML = `
+            <div class="alert-header">
+                <span class="alert-severity" style="color: ${sevColor};">● ${alert.severity}</span>
+                <span class="alert-time">${time}</span>
+            </div>
+            <div class="alert-title">${escapeHtml(alert.category || alert.rule_id)}</div>
+            <div class="alert-detail">${escapeHtml(alert.description || '')}</div>
+            ${alert.mitre ? `<div class="alert-mitre">MITRE: ${escapeHtml(alert.mitre)}</div>` : ''}
+            <div class="alert-detail" style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.2rem;">
+                📄 ${escapeHtml(alert.source_file || '')} : L${alert.line_number || '?'}
+            </div>
+        `;
+        return div;
+    }
+
+    function filterAlerts() {
+        const filter = document.getElementById('severity-filter').value;
+        document.querySelectorAll('.alert-entry').forEach(entry => {
+            if (filter === 'all' || entry.dataset.severity === filter) {
+                entry.style.display = '';
+            } else {
+                entry.style.display = 'none';
+            }
+        });
+    }
+
+    function clearAlerts() {
+        const feed = document.getElementById('alert-feed');
+        feed.querySelectorAll('.alert-entry').forEach(e => e.remove());
+        document.getElementById('no-alerts').style.display = '';
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+</script>
+{% endblock %}

@@ -648,41 +648,96 @@ def get_parser(filepath: str):
     """
     Get the appropriate parser based on file extension and content.
 
+    Auto-detects log types including Windows EVTX, Sysmon, Linux syslog,
+    auth.log, journald, Apache/Nginx, firewall, cloud logs, and macOS.
+
     Args:
         filepath: Path to the log file.
 
     Returns:
         A parser instance appropriate for the file type.
     """
+    # Lazy import Linux parsers to avoid circular imports
+    from parsers.linux_parsers import (
+        SyslogParser, AuthLogParser, JournaldParser,
+        ApacheNginxParser, FirewallLogParser,
+    )
+
     path = Path(filepath)
     ext = path.suffix.lower()
     name = path.name.lower()
 
+    # --- Windows ---
     if ext == ".evtx":
         return EVTXParser()
 
+    if "sysmon" in name:
+        return SysmonParser()
+
+    # --- JSON-based logs ---
     if ext == ".json":
-        # Detect JSON type by peeking at content
         try:
             with open(filepath, "r") as f:
-                start = f.read(1000)
+                start = f.read(2000)
+            # AWS CloudTrail
             if "Records" in start and "eventSource" in start:
                 return CloudTrailParser()
+            # Azure Activity
             if "operationName" in start and ("azure" in start.lower() or "microsoft" in start.lower()):
                 return AzureActivityParser()
+            # GCP Audit
             if "protoPayload" in start or "gcp" in name:
                 return GCPAuditParser()
+            # macOS Unified Logs
             if "processImagePath" in start or "subsystem" in start:
                 return MacOSLogParser()
+            # Journald JSON export
+            if "__REALTIME_TIMESTAMP" in start or "_SYSTEMD_UNIT" in start or "SYSLOG_IDENTIFIER" in start:
+                return JournaldParser()
         except Exception:
             pass
         return TextLogParser()
 
+    # --- Linux logs ---
+    # Auth log (auth.log, secure)
+    if any(x in name for x in ["auth.log", "secure", "auth_log"]):
+        return AuthLogParser()
+
+    # Auditd
     if "audit" in name and ext in (".log", ".txt", ""):
         return LinuxAuditdParser()
 
-    if "sysmon" in name:
-        return SysmonParser()
+    # Firewall logs (ufw, iptables, firewall, kern)
+    if any(x in name for x in ["ufw", "firewall", "iptables", "nftables", "kern.log"]):
+        return FirewallLogParser()
+
+    # Apache/Nginx access and error logs
+    if any(x in name for x in ["access.log", "error.log", "apache", "nginx", "httpd"]):
+        return ApacheNginxParser()
+
+    # Syslog / messages
+    if any(x in name for x in ["syslog", "messages", "daemon.log", "mail.log"]):
+        return SyslogParser()
+
+    # --- Content-based detection for .log and .txt ---
+    if ext in (".log", ".txt", ".syslog", ""):
+        try:
+            with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+                sample = f.read(3000)
+            # Check for firewall patterns
+            if "IN=" in sample and "OUT=" in sample and "SRC=" in sample:
+                return FirewallLogParser()
+            # Check for auth patterns
+            if ("sshd[" in sample or "sudo:" in sample or "pam_unix" in sample):
+                return AuthLogParser()
+            # Check for web server patterns
+            if re.search(r'"\s*(GET|POST|PUT|DELETE|HEAD)\s+/', sample):
+                return ApacheNginxParser()
+            # Check for syslog format
+            if re.search(r"^\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+\S+\s+\S+", sample):
+                return SyslogParser()
+        except Exception:
+            pass
 
     return TextLogParser()
 

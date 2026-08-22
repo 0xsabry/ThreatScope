@@ -18,7 +18,16 @@ data/
 uploads/
 exports/
 sigma_rules/
-yara_rules/
+logs/
+events.json
+
+# YARA rules directory (ignore user-added rules but track built-in V3 rules)
+yara_rules/*
+!yara_rules/malware_signatures.yar
+!yara_rules/webshells.yar
+!yara_rules/exploit_tools.yar
+!yara_rules/suspicious_documents.yar
+!yara_rules/linux_threats.yar
 
 # IDE
 .vscode/
