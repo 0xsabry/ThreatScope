@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/ThreatScope-V3-00d4ff?style=for-the-badge&logo=shield&logoColor=white" alt="ThreatScope V3"/>
+  <img src="https://img.shields.io/badge/ThreatScope-V3.5-00d4ff?style=for-the-badge&logo=shield&logoColor=white" alt="ThreatScope V3.5"/>
 </p>
 
-<h1 align="center">🛡️ ThreatScope V3</h1>
+<h1 align="center">🛡️ ThreatScope V3.5</h1>
 
 <p align="center">
   <strong>Advanced DFIR & Threat Detection Platform</strong><br>
@@ -15,16 +15,26 @@
   <img src="https://img.shields.io/badge/SigmaHQ-3000%2B%20Rules-blue?style=flat-square" alt="Sigma Rules"/>
   <img src="https://img.shields.io/badge/MITRE%20ATT%26CK-100%2B%20Techniques-red?style=flat-square" alt="MITRE ATT&CK"/>
   <img src="https://img.shields.io/badge/Detection%20Rules-55%2B%20Categories-purple?style=flat-square" alt="Detection Rules"/>
+  <img src="https://img.shields.io/badge/Enterprise%20Modules-6%20New-ff8c00?style=flat-square" alt="Enterprise Modules"/>
   <img src="https://img.shields.io/badge/Author-0xSABRY-ff1744?style=flat-square" alt="Author"/>
 </p>
 
 ---
 
-## 🚀 What is ThreatScope V3?
+## 🚀 What is ThreatScope V3.5?
 
-ThreatScope V3 is a **world-class DFIR and threat detection platform** designed for SOC analysts, incident responders, and threat hunters. It combines the power of Sigma rules, behavioral chain detection, AI-powered analysis, and multi-platform log parsing into one unified tool — now with **live monitoring**, **extended Linux support**, **20+ YARA rules**, and **security-hardened architecture**.
+ThreatScope V3.5 is a **world-class DFIR and threat detection platform** designed for SOC analysts, incident responders, and threat hunters. It combines the power of Sigma rules, behavioral chain detection, AI-powered analysis, and multi-platform log parsing into one unified tool — now with **6 enterprise-grade modules** for advanced investigations: causal graph analysis, deep forensic artifact parsing, hypothesis-driven AI investigation, auto-deobfuscation, dynamic rule generation, and purple team MITRE verification.
 
-### What's New in V3
+### 🆕 What's New in V3.5 — Enterprise Modules
+
+- 🔀 **Causal Graph & Process Lineage** — Builds directional process graphs from Sysmon/Security/auditd logs with automated Root Cause Analysis (RCA) backtracking and D3.js/Cytoscape.js export
+- 🧩 **Deep Forensics Artifact Parsers** — Prefetch, $MFT, Shimcache, and Amcache parsers for Windows DFIR deep-dives with timestomping detection
+- 🤖 **Hypothesis-Driven AI Copilot** — Autonomous investigation agent that generates, scores, and refines hypotheses with graded evidence collection
+- 🔓 **Auto-Deobfuscation Engine** — Multi-layer recursive deobfuscation for PowerShell, Bash, and generic payloads with embedded C2 indicator extraction
+- 📝 **Dynamic Rule Generator** — Auto-generates valid Sigma YAML and YARA signatures from deobfuscated payloads and behavioral patterns
+- 🟣 **Purple Team MITRE Verifier** — Validates detection coverage against Atomic Red Team tests, builds ATT&CK Navigator layers, and identifies detection gaps
+
+### What's in V3
 
 - 🐧 **Full Linux Log Support** — Dedicated parsers for syslog, auth.log, journald, Apache/Nginx, and firewall logs
 - 📡 **Live Log Monitoring** — Real-time WebSocket-based streaming with instant detection
@@ -38,7 +48,7 @@ ThreatScope V3 is a **world-class DFIR and threat detection platform** designed 
 
 ### Why ThreatScope?
 
-| Feature | ThreatScope V3 | Chainsaw | Others |
+| Feature | ThreatScope V3.5 | Chainsaw | Others |
 |---------|:-:|:-:|:-:|
 | SigmaHQ Full Integration (3000+ Rules) | ✅ | ✅ | ❌ |
 | YARA Rules Engine (20+ Built-in) | ✅ | ✅ | ❌ |
@@ -46,6 +56,12 @@ ThreatScope V3 is a **world-class DFIR and threat detection platform** designed 
 | Multi-Platform (Win/Linux/Mac/Cloud) | ✅ | ❌ | ❌ |
 | Full Linux Log Parsing (5 Parsers) | ✅ | ❌ | ❌ |
 | Live Log Monitoring (WebSocket) | ✅ | ❌ | ❌ |
+| Causal Process Graph & RCA | ✅ | ❌ | ❌ |
+| Deep Forensics (Prefetch/MFT/Shimcache/Amcache) | ✅ | ❌ | ❌ |
+| Hypothesis-Driven AI Investigation | ✅ | ❌ | ❌ |
+| Auto-Deobfuscation (PS/Bash/Generic) | ✅ | ❌ | ❌ |
+| Dynamic Sigma & YARA Rule Generation | ✅ | ❌ | ❌ |
+| Purple Team MITRE Verification | ✅ | ❌ | ❌ |
 | AI Copilot & Narrative Engine | ✅ | ❌ | ❌ |
 | APT Group Attribution (20 Groups) | ✅ | ❌ | ❌ |
 | Threat Intel Enrichment (VT/AbuseIPDB/OTX) | ✅ | ❌ | ❌ |
@@ -60,6 +76,55 @@ ThreatScope V3 is a **world-class DFIR and threat detection platform** designed 
 
 ## ✨ Key Features
 
+### 🔀 Causal Graph & Process Lineage (V3.5 NEW)
+- **Process Tree Construction** — Builds PPID→PID→Child graphs from Sysmon EventID 1, Security 4688, and auditd
+- **Root Cause Analysis** — Automated backtracking to identify initial compromise process
+- **Network Overlay** — Maps network connections (Sysmon 3) to process nodes
+- **File Modification Tracking** — Links file operations (Sysmon 11/15) to responsible processes
+- **Multi-Format Export** — D3.js force-directed, Cytoscape.js, GraphML, DOT, and JSON
+- **Anomaly Detection** — Identifies suspicious process chains, orphan processes, and injection patterns
+- **NetworkX Integration** — Optional advanced graph analysis with centrality and community detection
+
+### 🧩 Deep Forensics Parsers (V3.5 NEW)
+- **Prefetch Parser** — Execution evidence with run counts, last execution timestamps, and referenced files
+- **$MFT / UsnJrnl Parser** — File system timeline reconstruction with timestomping detection (MACB analysis)
+- **Shimcache Parser** — AppCompatCache historical execution evidence with path extraction
+- **Amcache Parser** — SHA1 hashes, install metadata, and publisher information for binaries
+- **Normalized Output** — All parsers produce ThreatFinding-compatible output
+
+### 🤖 Hypothesis-Driven AI Copilot (V3.5 NEW)
+- **Autonomous Investigation** — Multi-phase workflow: Triage → Hypothesis → Evidence → Analysis → Conclusion
+- **Hypothesis Engine** — Generates ranked investigative hypotheses (AI-powered or heuristic fallback)
+- **Evidence Collector** — Systematically gathers and grades evidence (Strong/Moderate/Weak/Contradictory)
+- **Confidence Scoring** — Auto-computed hypothesis confidence from weighted evidence
+- **Investigation Reports** — Structured reports with executive summary and recommended actions
+- **Interactive Q&A** — Drill-down conversations grounded in investigation data
+
+### 🔓 Auto-Deobfuscation Engine (V3.5 NEW)
+- **PowerShell Deobfuscation** — Base64, backtick escapes, format strings (-f), XOR payloads, char() arrays, environment variable replacement
+- **Bash Deobfuscation** — Command concatenation, hex encoding, base64 pipes, $() substitution, eval chains
+- **Generic Deobfuscation** — URL encoding, HTML entities, Unicode escapes
+- **Recursive Processing** — Multi-layer deobfuscation with configurable depth limits
+- **C2 Extraction** — Automatically extracts IPs, domains, URLs from deobfuscated payloads
+- **Deobfuscation Pipeline** — Chain multiple deobfuscators with detailed step-by-step trace
+
+### 📝 Dynamic Rule Generator (V3.5 NEW)
+- **Sigma Rule Generation** — Auto-generates valid SigmaHQ-format YAML rules with field selections and conditions
+- **YARA Rule Generation** — Produces YARA signatures with string/hex/regex patterns from payloads
+- **MITRE ATT&CK Mapping** — Auto-maps generated rules to techniques and tactics
+- **Finding-Based Generation** — Creates detection rules directly from analysis findings
+- **Behavioral Pattern Rules** — Generates rules from behavioral chain detections
+- **Metadata Enrichment** — Includes author, date, severity, description, and references
+
+### 🟣 Purple Team MITRE Verifier (V3.5 NEW)
+- **Atomic Red Team Integration** — Loads and parses Atomic Red Team YAML test catalogs
+- **Simulation Evaluation** — Matches test signatures against Sigma rules and built-in patterns (no live execution)
+- **Coverage Matrix** — Builds technique × data source × status coverage heatmaps
+- **ATT&CK Navigator Export** — Generates Navigator-compatible JSON layers
+- **Gap Analysis** — Identifies detection gaps with prioritized remediation recommendations
+- **Maturity Scoring** — Per-tactic maturity scoring for compliance and reporting
+- **Built-in Test Stubs** — 20 pre-loaded tests for critical techniques when no external tests available
+
 ### 🔍 Detection Power
 - **55+ Built-in Detection Categories** — Advanced regex patterns covering cloud, Linux, network, and application attacks
 - **SigmaHQ Integration** — Auto-sync and parse 3000+ Sigma rules with full condition support
@@ -67,14 +132,14 @@ ThreatScope V3 is a **world-class DFIR and threat detection platform** designed 
 - **Behavioral Chain Detection** — 15 multi-stage attack patterns with time-window correlation
 - **30 Correlation Rules** — Kill chain analysis and score boosting
 
-### 🐧 Linux Log Support (V3 NEW)
+### 🐧 Linux Log Support (V3)
 - **Syslog Parser** — RFC 3164/5424 with facility/severity extraction
 - **Auth Log Parser** — SSH login, sudo, PAM, account management events
 - **Journald Parser** — systemd journal JSON exports with full metadata
 - **Apache/Nginx Parser** — Access and error logs with suspicious request flagging
 - **Firewall Parser** — iptables/nftables/ufw with action and protocol extraction
 
-### 📡 Live Monitoring (V3 NEW)
+### 📡 Live Monitoring (V3)
 - **Real-time Log Tailing** — Tail live log files with instant detection
 - **Multi-file Monitoring** — Monitor multiple files simultaneously
 - **Live Alert Stream** — Real-time alert cards with severity color-coding
@@ -94,6 +159,7 @@ ThreatScope V3 is a **world-class DFIR and threat detection platform** designed 
 - **Attack Narrative Engine** — Generates professional incident reports from findings
 - **Analyst Copilot** — Chat interface for Q&A grounded in session data
 - **Training Mode** — Socratic educational approach for junior analysts
+- **Agentic Copilot** — Autonomous hypothesis-driven investigation (V3.5)
 
 ### 📡 Threat Intelligence
 - VirusTotal, AbuseIPDB, AlienVault OTX API integration
@@ -109,7 +175,7 @@ ThreatScope V3 is a **world-class DFIR and threat detection platform** designed 
 - AI Copilot chat interface
 - Live monitoring dashboard
 
-### 🔐 Security Hardening (V3 NEW)
+### 🔐 Security Hardening (V3)
 - Content Security Policy (CSP) headers
 - X-Frame-Options, X-Content-Type-Options, HSTS
 - In-memory rate limiting per IP with auto-blocking
@@ -133,6 +199,9 @@ pip install -r requirements.txt
 
 # Optional: Install AI and reporting features
 pip install reportlab python-docx yara-python
+
+# Optional: Install graph engine (V3.5)
+pip install networkx
 ```
 
 ### Launch Web Dashboard
@@ -164,6 +233,50 @@ python cli.py analyze path/to/events.json -o stix_bundle.json -f stix
 
 # Sync Sigma rules from SigmaHQ
 python cli.py sync
+```
+
+### V3.5 Enterprise Modules Usage
+
+```python
+# ── Process Graph & Root Cause Analysis ──
+from core.graph_engine import ProcessGraph, RootCauseAnalyzer
+graph = ProcessGraph()
+graph.ingest_events(parsed_events)
+rca = RootCauseAnalyzer(graph)
+root_cause = rca.analyze(suspicious_pid=1234)
+graph.export_d3_json("process_graph.json")
+
+# ── Deep Forensics Parsing ──
+from parsers.forensic_parsers import PrefetchParser, ShimcacheParser
+pf = PrefetchParser()
+findings = pf.parse_prefetch_csv("prefetch_timeline.csv")
+
+# ── Auto-Deobfuscation ──
+from core.deobfuscator import DeobfuscationPipeline
+pipeline = DeobfuscationPipeline()
+result = pipeline.process(obfuscated_payload)
+print(result["final_output"])    # Clean payload
+print(result["c2_indicators"])   # Extracted IPs/domains
+
+# ── Dynamic Rule Generation ──
+from core.rule_gen import SigmaRuleGenerator, YaraRuleGenerator
+sigma_gen = SigmaRuleGenerator()
+rule = sigma_gen.from_finding(finding_dict)
+sigma_gen.save_rule(rule, "rules/custom_detection.yml")
+
+# ── Purple Team MITRE Verification ──
+from core.atomic_verifier import MITREVerifier
+verifier = MITREVerifier()
+verifier.load_atomics("atomic-red-team/atomics/")
+report = verifier.run_full_assessment(sigma_engine=engine)
+verifier.export_report("coverage.json", fmt="navigator")
+
+# ── Hypothesis-Driven AI Investigation ──
+from ai.agentic_core import AgenticCopilot
+copilot = AgenticCopilot()
+report = copilot.investigate(analysis_results)
+print(report["executive_summary"])
+copilot.ask("What evidence supports credential theft?")
 ```
 
 ### Live Monitoring
@@ -217,15 +330,21 @@ ThreatscopeX/
 │   ├── false_positive.py       # FP suppression engine
 │   ├── realtime_monitor.py     # File change monitoring
 │   ├── live_monitor.py         # V3: Live log tailing & detection
-│   └── security.py             # V3: Security hardening module
+│   ├── security.py             # V3: Security hardening module
+│   ├── graph_engine.py         # V3.5: Causal process graph & RCA
+│   ├── deobfuscator.py         # V3.5: Auto-deobfuscation engine
+│   ├── rule_gen.py             # V3.5: Dynamic Sigma/YARA generation
+│   └── atomic_verifier.py      # V3.5: Purple team MITRE verifier
 ├── parsers/
 │   ├── log_parsers.py          # Multi-platform log parsers + auto-detection
-│   └── linux_parsers.py        # V3: Dedicated Linux log parsers
+│   ├── linux_parsers.py        # V3: Dedicated Linux log parsers
+│   └── forensic_parsers.py     # V3.5: Deep forensics artifact parsers
 ├── intel/
 │   ├── enrichment.py           # VT/AbuseIPDB/OTX enrichment
 │   └── apt_mapper.py           # 20 APT groups + 100+ MITRE techniques
 ├── ai/
-│   └── ai_core.py              # Narrative, Copilot, Training
+│   ├── ai_core.py              # Narrative, Copilot, Training
+│   └── agentic_core.py         # V3.5: Hypothesis-driven AI investigation
 ├── export/
 │   └── exporters.py            # JSON/CSV/STIX/PDF/DOCX
 ├── yara_rules/
@@ -254,12 +373,13 @@ ThreatscopeX/
 
 ## 🎯 MITRE ATT&CK Coverage
 
-ThreatScope V3 maps findings to **100+ MITRE ATT&CK techniques** across all **14 tactics** and provides:
+ThreatScope V3.5 maps findings to **100+ MITRE ATT&CK techniques** across all **14 tactics** and provides:
 - Interactive heatmap visualization
 - APT group attribution (20 groups)
 - Kill chain coverage analysis
 - Technique-to-tactic mapping
 - Sub-technique resolution
+- **V3.5:** ATT&CK Navigator layer export from purple team verification
 
 ---
 
@@ -335,13 +455,14 @@ ThreatScope V3 maps findings to **100+ MITRE ATT&CK techniques** across all **14
 | STIX 2.1 | Standard threat intelligence sharing format |
 | PDF | Professional executive report with charts |
 | DOCX | Editable Word document for incident reports |
+| ATT&CK Navigator | MITRE ATT&CK Navigator layer JSON (V3.5) |
 
 ---
 
 ## 🕵️ APT Group Database (20 Groups)
 
 | Group | Country | Aliases |
-|-------|---------|---------|
+|-------|---------|---------| 
 | APT28 | Russia | Fancy Bear, Sofacy, STRONTIUM |
 | APT29 | Russia | Cozy Bear, NOBELIUM |
 | APT41 | China | Winnti, BARIUM, Double Dragon |
