@@ -113,6 +113,12 @@ def cmd_sync(args):
               f" ({result.get('rules_added', 0)} new, {result.get('rules_updated', 0)} updated)\033[0m")
 
 
+def cmd_gui(args):
+    """Launch the desktop GUI."""
+    from gui import main as gui_main
+    gui_main()
+
+
 def cmd_web(args):
     """Launch the web interface."""
     from app import app
@@ -145,6 +151,9 @@ def main():
     # Sync command
     subparsers.add_parser("sync", help="Sync Sigma rules from SigmaHQ")
 
+    # GUI command
+    subparsers.add_parser("gui", help="Launch desktop GUI (default)")
+
     # Web command
     web_parser = subparsers.add_parser("web", help="Launch web interface")
     web_parser.add_argument("--host", default="127.0.0.1", help="Host address")
@@ -158,11 +167,14 @@ def main():
     elif args.command == "sync":
         setup_logging()
         cmd_sync(args)
+    elif args.command == "gui":
+        cmd_gui(args)
     elif args.command == "web":
         setup_logging()
         cmd_web(args)
     else:
-        parser.print_help()
+        # Default: launch GUI
+        cmd_gui(args)
 
 
 if __name__ == "__main__":
