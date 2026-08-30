@@ -25,7 +25,8 @@ from werkzeug.utils import secure_filename
 
 from config import (
     VERSION, APP_NAME, FLASK_HOST, FLASK_PORT, FLASK_DEBUG,
-    SECRET_KEY, UPLOAD_DIR, EXPORT_DIR, MITRE_TACTICS
+    SECRET_KEY, UPLOAD_DIR, EXPORT_DIR, MITRE_TACTICS,
+    OPENAI_API_KEY, VIRUSTOTAL_API_KEY, ABUSEIPDB_API_KEY, OTX_API_KEY,
 )
 from core.analyzer import LogAnalyzer
 from core.sigma_engine import SigmaEngine
@@ -167,7 +168,13 @@ def rules_page():
 @app.route("/settings")
 def settings_page():
     """Configuration settings."""
-    return render_template("settings.html", version=VERSION)
+    api_keys = {
+        "openai": bool(OPENAI_API_KEY),
+        "virustotal": bool(VIRUSTOTAL_API_KEY),
+        "abuseipdb": bool(ABUSEIPDB_API_KEY),
+        "otx": bool(OTX_API_KEY),
+    }
+    return render_template("settings.html", version=VERSION, api_keys=api_keys)
 
 
 # ============================================================
@@ -443,15 +450,17 @@ def api_live_status():
 # ============================================================
 
 if __name__ == "__main__":
-    print(f"""
-    ╔══════════════════════════════════════════════╗
-    ║  🛡️  ThreatScope V{VERSION}                      ║
-    ║  Advanced DFIR & Threat Detection Platform   ║
-    ║  SECURITY HARDENED                           ║
-    ║  by 0xSABRY                                  ║
-    ╠══════════════════════════════════════════════╣
-    ║  Dashboard: http://{FLASK_HOST}:{FLASK_PORT}           ║
-    ║  Live Monitor: /live-monitor                 ║
-    ╚══════════════════════════════════════════════╝
-    """)
+    banner = (
+        "\n"
+        "    +===============================================+\n"
+        f"    |  [*] ThreatScope V{VERSION}                       |\n"
+        "    |  Advanced DFIR & Threat Detection Platform    |\n"
+        "    |  SECURITY HARDENED                            |\n"
+        "    |  by 0xSABRY                                  |\n"
+        "    +===============================================+\n"
+        f"    |  Dashboard: http://{FLASK_HOST}:{FLASK_PORT}            |\n"
+        "    |  Live Monitor: /live-monitor                  |\n"
+        "    +===============================================+\n"
+    )
+    print(banner)
     app.run(host=FLASK_HOST, port=FLASK_PORT, debug=FLASK_DEBUG)
